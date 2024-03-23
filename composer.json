@@ -1,0 +1,31 @@
+{
+    "name": "xenos/openapi-client-generaor",
+    "type": "library",
+    "description": "A PHP code generator for OpenAPI clients",
+    "keywords": ["OpenAPI", "swagger", "php", "api", "client", "library"],
+    "homepage": "https://github.com/XenosEleatikos/OpenAPIClientGenerator",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Christoph Hochholzer",
+            "email": "christoph@hochholzer.info",
+            "homepage": "https://github.com/XenosEleatikos",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=8.2.0",
+        "psr/log": "^3.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11",
+        "friendsofphp/php-cs-fixer": "^3.52",
+        "phpstan/phpstan": "^1.10"
+    },
+    "autoload": {
+        "psr-4": {
+            "OpenApiClientGenerator\\": "src",
+            "OpenApiClientGeneratorTest\\": "tests/unit"
+        }
+    }
+}

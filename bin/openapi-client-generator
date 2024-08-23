@@ -1,0 +1,19 @@
+#!/usr/bin php
+<?php
+$paths = [
+    __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/../../../autoload.php'
+];
+foreach ($paths as $path) {
+    if (is_file($path)) {
+        include $path;
+        break;
+    }
+}
+
+$cli = new Symfony\Component\Console\Application('A PHP code generator for OpenAPI clients', '1.0.0');
+$cli->setCatchExceptions(true);
+$cli->addCommands([
+    new \OpenApiClientGenerator\Command\GenerateCommand(),
+]);
+$cli->run();

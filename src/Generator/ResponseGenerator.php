@@ -87,7 +87,8 @@ readonly class ResponseGenerator extends AbstractGenerator
     private function addFactory(ClassType $class, Response $response, OpenAPI $openAPI): void
     {
         $factory = $class->addMethod('make')
-            ->setStatic();
+            ->setStatic()
+            ->setReturnType('self');
 
         /** @var null|MediaType $jsonMediaType */
         $jsonMediaType = $response->content['application/json'] ?? null;

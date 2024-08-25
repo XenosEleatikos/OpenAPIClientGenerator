@@ -71,7 +71,9 @@ readonly class SchemaGenerator extends AbstractGenerator
     private function addFactory(ClassType $class, Schema $schema, OpenAPI $openAPI): void
     {
         $factory = $class->addMethod('make')
-            ->setStatic();
+            ->setStatic()
+            ->setReturnType('self');
+
         $factory->addParameter('data')
             ->setType(stdClass::class);
 

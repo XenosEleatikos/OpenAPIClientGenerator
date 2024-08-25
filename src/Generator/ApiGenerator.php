@@ -129,9 +129,9 @@ readonly class ApiGenerator extends AbstractGenerator
             /** @var null|MediaType $jsonMediaType */
             $jsonMediaType = $response->content['application/json'] ?? null;
             if (isset($jsonMediaType)) {
-                $returnCodeSnippets[] = '    ' . $statusCode . ' => \\' . $returnTypes[$statusCode] . '::make(json_decode($result->getBody()->getContents())),';
+                $returnCodeSnippets[] = '    ' . $statusCode . ' => \\' . $returnTypes[$statusCode] . '::make(' . self::generateStatusCode($statusCode) . ', json_decode($result->getBody()->getContents())),';
             } else {
-                $returnCodeSnippets[] = '    ' . $statusCode . ' => \\' . $returnTypes[$statusCode] . '::make(),';
+                $returnCodeSnippets[] = '    ' . $statusCode . ' => \\' . $returnTypes[$statusCode] . '::make(' . self::generateStatusCode($statusCode) . '),';
             }
         }
 
@@ -170,6 +170,11 @@ readonly class ApiGenerator extends AbstractGenerator
             $operation->description,
         ]);
         $apiMethod->setComment(implode(PHP_EOL . PHP_EOL, $comments));
+    }
+
+    private static function generateStatusCode(string $statusCode): string
+    {
+        return '\'' . $statusCode . '\'';
     }
 
     public static function getClassName(Tag $tag): string

@@ -92,18 +92,21 @@ readonly class ResponseGenerator extends AbstractGenerator
         /** @var null|MediaType $jsonMediaType */
         $jsonMediaType = $response->content['application/json'] ?? null;
 
+        $factory->addParameter('statusCode')
+            ->setType('string');
+
         if (isset($jsonMediaType)) {
             $factory->addParameter('data')
                 ->setType(stdClass::class);
         } else {
             $factory
-                ->addBody('return new self();');
+                ->addBody('return new self($statusCode);');
 
             return;
         }
 
         $factory
-            ->addBody('return new self(');
+            ->addBody('return new self(' . PHP_EOL . '    $statusCode, ');
 
         if ($jsonMediaType->schema instanceof Reference) {
             $className = self::createResponseClassNameFromReferencePath($jsonMediaType->schema?->ref);
@@ -126,9 +129,14 @@ readonly class ResponseGenerator extends AbstractGenerator
     {
         $constructor = $class->addMethod('__construct');
 
+        $constructor
+            ->addPromotedParameter('statusCode')
+            ->setType('string');
+
         if (!isset($response->content)) {
             return;
         }
+
         /** @todo Implement other media types */
         /** @var MediaType $mediaType */
         $mediaType = $response->content['application/json'];
@@ -141,7 +149,9 @@ readonly class ResponseGenerator extends AbstractGenerator
             $className = null;
         }
 
-        $constructor->addPromotedParameter('content')
+        $constructor
+            ->addPromotedParameter('content')
             ->setType(implode('|', $this->typeHintGenerator->getReturnTypes($schema, $className)));
+
     }
 }

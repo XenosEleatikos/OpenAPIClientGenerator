@@ -27,6 +27,17 @@ class SchemaTypes extends ArrayObject implements JsonSerializable
         );
     }
 
+    public function contains(SchemaType $schemaType): bool
+    {
+        foreach ($this as $existingSchemaType) {
+            if ($existingSchemaType->equals($schemaType)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function jsonSerialize(): string|array
     {
         return $this->count() === 1

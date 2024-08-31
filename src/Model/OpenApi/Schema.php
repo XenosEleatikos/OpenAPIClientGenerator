@@ -8,6 +8,8 @@ use JsonSerializable;
 use stdClass;
 
 use function array_filter;
+use function is_integer;
+use function is_string;
 
 class Schema implements JsonSerializable
 {
@@ -28,6 +30,41 @@ class Schema implements JsonSerializable
         public ?self $additionalProperties = null,
     ) {
         $this->properties = new SchemasOrReferences();
+    }
+
+    public function isEnum(): bool
+    {
+        return !empty($this->enum);
+    }
+
+    public function isEnumOfStrings(): bool
+    {
+        if (!$this->isEnum()) {
+            return false;
+        }
+
+        foreach ($this->enum as $value) {
+            if (!is_string($value)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public function isEnumOfIntegers(): bool
+    {
+        if (!$this->isEnum()) {
+            return false;
+        }
+
+        foreach ($this->enum as $value) {
+            if (!is_integer($value)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public static function make(stdClass $schema): self

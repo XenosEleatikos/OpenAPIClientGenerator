@@ -40,7 +40,7 @@ readonly class ResponseGenerator extends AbstractGenerator
     }
 
     /** @return array<string, Response> */
-    public function findAnonymousResponses(OpenAPI $openAPI): array
+    private function findAnonymousResponses(OpenAPI $openAPI): array
     {
         foreach ($openAPI->paths as $path) {
             foreach ($path->getAllOperations() as $operation) {
@@ -72,7 +72,7 @@ readonly class ResponseGenerator extends AbstractGenerator
         $namespace = new PhpNamespace($this->config->namespace . '\Response');
         $class = new ClassType($name);
         $class->addComment($response->description);
-        $this->addConstructor($class, $response, $openAPI);
+        $this->addConstructor($class, $response, $openAPI, $name);
         $this->addFactory($class, $response, $openAPI);
 
         $namespace->add($class);
@@ -84,8 +84,11 @@ readonly class ResponseGenerator extends AbstractGenerator
         $this->printer->printFile('/src/Response/' . ucfirst($name) . '.php', $file);
     }
 
-    private function addFactory(ClassType $class, Response $response, OpenAPI $openAPI): void
-    {
+    private function addFactory(
+        ClassType $class,
+        Response $response,
+        OpenAPI $openAPI,
+    ): void {
         $factory = $class->addMethod('make')
             ->setStatic()
             ->setReturnType('self');
@@ -126,7 +129,7 @@ readonly class ResponseGenerator extends AbstractGenerator
         $factory->addBody(');');
     }
 
-    private function addConstructor(ClassType $class, Response $response, OpenAPI $openAPI): void
+    private function addConstructor(ClassType $class, Response $response, OpenAPI $openAPI, string $name): void
     {
         $constructor = $class->addMethod('__construct');
 
@@ -142,17 +145,19 @@ readonly class ResponseGenerator extends AbstractGenerator
         /** @var MediaType $mediaType */
         $mediaType = $response->content['application/json'];
 
-        if ($mediaType->schema instanceof Reference) {
-            $className = SchemaGenerator::createSchemaClassNameFromReferencePath($mediaType->schema?->ref);
-            $schema = $openAPI->resolveReference($mediaType->schema);
-        } else {
-            $schema = $mediaType->schema;
-            $className = null;
-        }
-
         $constructor
             ->addPromotedParameter('content')
-            ->setType(implode('|', $this->typeHintGenerator->getReturnTypes($schema, $className)));
+            ->setType(
+                implode(
+                    '|',
+                    $this->typeHintGenerator->getReturnTypes(
+                        $mediaType->schema,
+                        $openAPI,
+                        $name,
+                        'jsonSchema'
+                    )
+                )
+            );
 
     }
 }

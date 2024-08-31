@@ -20,4 +20,9 @@ enum SchemaType: string implements JsonSerializable
     {
         return $this->value;
     }
+
+    public function equals(SchemaType $schemaType): bool
+    {
+        return $this->value === $schemaType->value;
+    }
 }

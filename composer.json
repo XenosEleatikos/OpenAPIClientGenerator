@@ -2,7 +2,7 @@
     "name": "xenos/openapi-client-generator",
     "type": "library",
     "description": "A PHP code generator for OpenAPI clients",
-    "keywords": ["OpenAPI", "swagger", "php", "api", "client", "library"],
+    "keywords": ["OpenAPI", "swagger", "json-schema", "php", "api", "client", "library"],
     "homepage": "https://github.com/XenosEleatikos/OpenAPIClientGenerator",
     "license": "MIT",
     "authors": [

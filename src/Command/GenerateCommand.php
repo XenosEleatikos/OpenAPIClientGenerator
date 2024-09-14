@@ -99,7 +99,6 @@ class GenerateCommand extends Command
         }
 
         $config = new Config(
-            openAPI: $specification,
             namespace: $rootNamespace,
             directory: $absolutOutputPath
         );
@@ -110,7 +109,7 @@ class GenerateCommand extends Command
                 new PsrPrinter()
             )
         );
-        $clientGenerator->generate();
+        $clientGenerator->generate($specification);
 
         return 0;
     }

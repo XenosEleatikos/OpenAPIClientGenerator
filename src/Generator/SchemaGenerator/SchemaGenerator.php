@@ -5,8 +5,7 @@ namespace OpenApiClientGenerator\Generator;
 use OpenApiClientGenerator\Config\Config;
 use OpenApiClientGenerator\Generator\SchemaGenerator\EnumGenerator;
 use OpenApiClientGenerator\Generator\SchemaGenerator\ClassGenerator;
-use OpenApiClientGenerator\Model\OpenApi\Reference;
-use OpenApiClientGenerator\Model\OpenApi\Response;
+use OpenApiClientGenerator\Generator\SchemaGenerator\SchemaClassNameGenerator;
 use OpenApiClientGenerator\Model\OpenApi\Schemas;
 use OpenApiClientGenerator\Model\OpenApi\SchemaType;
 use OpenApiClientGenerator\Printer\Printer;
@@ -20,12 +19,14 @@ readonly class SchemaGenerator extends AbstractGenerator
 {
     private ClassGenerator $classGenerator;
     private EnumGenerator $enumGenerator;
+    private SchemaClassNameGenerator $schemaClassNameGenerator;
 
     public function __construct(Config $config, Printer $printer)
     {
         parent::__construct($config, $printer);
         $this->classGenerator = new ClassGenerator($config, $printer);
         $this->enumGenerator = new EnumGenerator($config, $printer);
+        $this->schemaClassNameGenerator = new SchemaClassNameGenerator();
     }
 
     public function generate(OpenAPI $openAPI): void
@@ -64,7 +65,7 @@ readonly class SchemaGenerator extends AbstractGenerator
             $anonymousSchemas = array_merge(
                 $anonymousSchemas ?? [],
                 $this->findAnonymousSchemasRecursive(
-                    self::createSchemaClassNameFromReferencePath($referencePath),
+                    $this->schemaClassNameGenerator->createSchemaClassNameFromReferencePath($referencePath),
                     $schema
                 )
             );
@@ -78,7 +79,7 @@ readonly class SchemaGenerator extends AbstractGenerator
     {
         foreach ($schema->properties as $propertyName => $schemaOrReference) {
             if ($schemaOrReference instanceof Schema) {
-                $schemaClassName = self::createSchemaClassNameFromParentClassNameAndProperty($parentClassName, $propertyName);
+                $schemaClassName = $this->schemaClassNameGenerator->createSchemaClassNameFromParentClassNameAndProperty($parentClassName, $propertyName);
                 $anonymousSchemas[$schemaClassName] = $schemaOrReference;
                 $anonymousSchemas = array_merge(
                     $anonymousSchemas,
@@ -88,45 +89,6 @@ readonly class SchemaGenerator extends AbstractGenerator
         }
 
         return $anonymousSchemas ?? [];
-    }
-
-    /**
-     * @return array{0: string, 1: Schema}
-     */
-    public static function createSchemaClassName(
-        Schema|Reference $schemaOrReference,
-        OpenAPI $openAPI,
-        string $className,
-        string $propertyName
-    ): array {
-        if ($schemaOrReference instanceof Reference) {
-            $propertyClassName = SchemaGenerator::createSchemaClassNameFromReferencePath($schemaOrReference->ref);
-
-            $schemaOrReference = $openAPI->resolveReference($schemaOrReference);
-            /** @var Schema $schemaOrReference */
-        } else {
-            $propertyClassName = SchemaGenerator::createSchemaClassNameFromParentClassNameAndProperty(
-                $className,
-                $propertyName
-            );
-        }
-
-        return [
-            $propertyClassName,
-            $schemaOrReference
-        ];
-    }
-
-    public static function createSchemaClassNameFromReferencePath(string $referencePath): string
-    {
-        $referencePath = explode('/', $referencePath);
-
-        return array_pop($referencePath);
-    }
-
-    public static function createSchemaClassNameFromParentClassNameAndProperty(string $parentClassName, string $propertyName): string
-    {
-        return $parentClassName . ucfirst($propertyName);
     }
 
     public function generateSchema(string $name, Schema $schema, OpenAPI $openAPI): void
@@ -139,7 +101,7 @@ readonly class SchemaGenerator extends AbstractGenerator
         }
     }
 
-    public function findAllSchemas(OpenAPI $openAPI): Schemas
+    private function findAllSchemas(OpenAPI $openAPI): Schemas
     {
         return new Schemas(
             array_merge(

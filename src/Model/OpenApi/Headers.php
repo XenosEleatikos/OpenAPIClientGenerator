@@ -11,15 +11,15 @@ use stdClass;
 use function array_filter;
 use function array_map;
 
-/** @extends ArrayObject<string, Schema> */
-class Schemas extends ArrayObject implements JsonSerializable
+/** @extends ArrayObject<string, Header> */
+class Headers extends ArrayObject implements JsonSerializable
 {
-    public static function make(stdClass $schemas): self
+    public static function make(stdClass $headers): self
     {
         $instance = new self();
 
-        foreach ((array)$schemas as $name => $schema) {
-            $instance[$name] = Schema::make($schema);
+        foreach ((array)$headers as $name => $header) {
+            $instance[$name] = Header::make($header);
         }
 
         return $instance;
@@ -29,7 +29,7 @@ class Schemas extends ArrayObject implements JsonSerializable
     {
         return (object)array_filter(
             array_map(
-                fn (Schema $schema) => $schema->jsonSerialize(),
+                fn (Header $header) => $header->jsonSerialize(),
                 $this->getArrayCopy()
             )
         );

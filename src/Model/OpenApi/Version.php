@@ -22,7 +22,7 @@ class Version implements JsonSerializable
 
     public static function make(string $version): self
     {
-        return new self(...array_map(fn(string $number) => (int)$number, explode(self::SEPARATOR, $version)));
+        return new self(...array_map(fn (string $number) => (int)$number, explode(self::SEPARATOR, $version)));
     }
 
     public function jsonSerialize(): string

@@ -7,6 +7,7 @@ use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
 use OpenApiClientGenerator\Config\Config;
 use OpenApiClientGenerator\Model\OpenApi\Operation;
+use OpenApiClientGenerator\Model\OpenApi\Schema;
 use OpenApiClientGenerator\Printer\Printer;
 use OpenApiClientGenerator\Model\OpenApi\MediaType;
 use OpenApiClientGenerator\Model\OpenApi\OpenAPI;
@@ -113,14 +114,16 @@ readonly class ResponseGenerator extends AbstractGenerator
             ->addBody('return new self(' . PHP_EOL . '    $statusCode, ');
 
         if ($jsonMediaType->schema instanceof Reference) {
-            $className = self::createResponseClassNameFromReferencePath($jsonMediaType->schema?->ref);
+            $className = self::createResponseClassNameFromReferencePath($jsonMediaType->schema->ref);
+            /** @var Schema $schema */
             $schema = $openAPI->resolveReference($jsonMediaType->schema);
         } else {
             $schema = $jsonMediaType->schema;
             $className = null;
         }
 
-        if ($schema->type[0] === SchemaType::OBJECT) {
+        // @todo Optimize code
+        if ($schema->type[0] === SchemaType::OBJECT) { // @phpstan-ignore-line
             $factory->addBody('    \\' . $this->config->namespace . '\Schema\\' . $className . '::make($data)');
         } else {
             $factory->addBody('    $data');

@@ -30,5 +30,16 @@
             "OpenApiClientGenerator\\": "src",
             "OpenApiClientGeneratorTest\\": "tests/unit"
         }
+    },
+    "scripts": {
+        "test": [
+            "php -dxdebug.mode=coverage ./vendor/bin/phpunit --coverage-text"
+        ],
+        "analyze": [
+            "vendor/bin/phpstan analyse -c phpstan.neon"
+        ],
+        "cs-fix": [
+            "vendor/bin/php-cs-fixer fix"
+        ]
     }
 }

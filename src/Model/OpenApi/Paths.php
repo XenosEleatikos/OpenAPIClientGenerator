@@ -12,7 +12,7 @@ use function array_filter;
 use function array_map;
 use function array_merge;
 
-/** @implements ArrayObject<string, PathItem> */
+/** @extends ArrayObject<string, PathItem> */
 class Paths extends ArrayObject implements JsonSerializable
 {
     public static function make(stdClass $paths): self
@@ -27,7 +27,7 @@ class Paths extends ArrayObject implements JsonSerializable
     public function jsonSerialize(): stdClass
     {
         return (object)array_map(
-            fn(PathItem $pathItem) => $pathItem->jsonSerialize(),
+            fn (PathItem $pathItem) => $pathItem->jsonSerialize(),
             $this->getArrayCopy()
         );
     }

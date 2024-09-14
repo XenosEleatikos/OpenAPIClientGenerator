@@ -10,23 +10,25 @@ use stdClass;
 
 use function array_map;
 
-/** @implements ArrayObject<Parameter|Reference> */
+/** @extends ArrayObject<string, Parameter|Reference> */
 class ParametersOrReferences extends ArrayObject implements JsonSerializable
 {
+    /** @param array<string, stdClass> $parametersOrReferences */
     public static function make(array $parametersOrReferences): self
     {
         return new self(
             array_map(
-                fn(stdClass $parametersOrReference): Parameter|Reference => Parameter::makeParameterOrReference($parametersOrReference),
+                fn (stdClass $parametersOrReference): Parameter|Reference => Parameter::makeParameterOrReference($parametersOrReference),
                 $parametersOrReferences
             )
         );
     }
 
+    /** @return array<string, stdClass> */
     public function jsonSerialize(): array
     {
         return array_map(
-            fn(Parameter|Reference $parameter) => $parameter->jsonSerialize(),
+            fn (Parameter|Reference $parameter) => $parameter->jsonSerialize(),
             $this->getArrayCopy()
         );
     }

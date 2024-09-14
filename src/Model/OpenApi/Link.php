@@ -10,14 +10,14 @@ use stdClass;
 
 class Link implements JsonSerializable
 {
-    public function __construct(
+    // @todo Optimize with phpstan
+    public function __construct(// @phpstan-ignore-line
         public string  $operationRef,
         public ?string $operationId = null,
         public array $parameters = [],
         public mixed $requestBody = null,
         public ?string $description = null,
         public ?Server $body = null,
-
     ) {
     }
 

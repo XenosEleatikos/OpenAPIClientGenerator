@@ -10,7 +10,7 @@ use stdClass;
 
 use function array_map;
 
-/** @implements ArrayObject<string, PathItem|Reference> */
+/** @extends ArrayObject<string, PathItem|Reference> */
 class PathItemsOrReferences extends ArrayObject implements JsonSerializable
 {
     public static function make(stdClass $schemas): self
@@ -24,10 +24,11 @@ class PathItemsOrReferences extends ArrayObject implements JsonSerializable
         return $instance;
     }
 
+    /** @return array<string, object> */
     public function jsonSerialize(): array
     {
         return array_map(
-            fn(PathItem|Reference $pathItem) => $pathItem->jsonSerialize(),
+            fn (PathItem|Reference $pathItem) => $pathItem->jsonSerialize(),
             $this->getArrayCopy()
         );
     }

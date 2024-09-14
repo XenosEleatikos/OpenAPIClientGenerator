@@ -10,9 +10,10 @@ use JsonSerializable;
 use function array_map;
 use function is_string;
 
-/** @implements ArrayObject<int, SchemaType> */
+/** @extends ArrayObject<int, SchemaType> */
 class SchemaTypes extends ArrayObject implements JsonSerializable
 {
+    /** @param string|string[] $schemaTypes */
     public static function make(string|array $schemaTypes): self
     {
         if (is_string($schemaTypes)) {
@@ -21,7 +22,7 @@ class SchemaTypes extends ArrayObject implements JsonSerializable
 
         return new self(
             array_map(
-                fn(string $schemaType): SchemaType => SchemaType::from($schemaType),
+                fn (string $schemaType): SchemaType => SchemaType::from($schemaType),
                 $schemaTypes
             )
         );
@@ -38,12 +39,13 @@ class SchemaTypes extends ArrayObject implements JsonSerializable
         return false;
     }
 
+    /** @return string|string[] */
     public function jsonSerialize(): string|array
     {
         return $this->count() === 1
-            ? $this[0]->value
+            ? $this[0]->value // @phpstan-ignore-line
             : array_map(
-                fn(SchemaType $schemaType): string => $schemaType->value,
+                fn (SchemaType $schemaType): string => $schemaType->value,
                 $this->getArrayCopy()
             );
     }

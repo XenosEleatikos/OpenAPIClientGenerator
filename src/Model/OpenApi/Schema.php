@@ -24,7 +24,7 @@ class Schema implements JsonSerializable
         public ?Xml $xml = null,
         public null|Schema|Reference $items = null,
         public ?string $description = null,
-        /** @var string[] */
+        /** @var array<int, mixed> */
         public array $enum = [],
         public mixed $default = null,
         public ?self $additionalProperties = null,

@@ -8,17 +8,23 @@ use OpenApiClientGenerator\Model\OpenApi\OpenAPI;
 use OpenApiClientGenerator\Model\OpenApi\Reference;
 use OpenApiClientGenerator\Model\OpenApi\Schema;
 use OpenApiClientGenerator\Model\OpenApi\SchemaType;
+
+use function is_null;
 use function ucfirst;
 
 readonly class TypeHintGenerator extends AbstractGenerator
 {
     /** @return string[] */
     public function getReturnTypes(
-        Schema|Reference $schemaOrReference,
+        null|Schema|Reference $schemaOrReference,
         OpenAPI $openAPI,
         string $parentClassName,
         string $propertyName
     ): array {
+        if (is_null($schemaOrReference)) {
+            return ['mixed'];
+        }
+
         list($className, $schema) = SchemaGenerator::createSchemaClassName($schemaOrReference, $openAPI, $parentClassName, $propertyName);
 
         if ($schema->isEnumOfStrings() || $schema->isEnumOfIntegers()) {

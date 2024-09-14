@@ -11,7 +11,7 @@ use stdClass;
 use function array_filter;
 use function array_map;
 
-/** @implements ArrayObject<string, Schema|Reference> */
+/** @extends ArrayObject<string, Schema|Reference> */
 class SchemasOrReferences extends ArrayObject implements JsonSerializable
 {
     public static function make(stdClass $schemas): self
@@ -29,22 +29,24 @@ class SchemasOrReferences extends ArrayObject implements JsonSerializable
     {
         return (object)array_filter(
             array_map(
-                fn(Schema|Reference $schema) => $schema->jsonSerialize(),
+                fn (Schema|Reference $schema) => $schema->jsonSerialize(),
                 $this->getArrayCopy()
             )
         );
     }
 
-    public function resolveProperties(OpenAPI $openAPI): array
+    public function resolveProperties(OpenAPI $openAPI): Schemas
     {
         foreach ($this as $name => $schemaOrReference) {
             if ($schemaOrReference instanceof Reference) {
-                $schemas[$name] = $openAPI->resolveReference($schemaOrReference);
+                /** @var Schema $schema */
+                $schema = $openAPI->resolveReference($schemaOrReference);
+                $schemas[$name] = $schema;
             } else {
                 $schemas[$name] = $schemaOrReference;
             }
         }
 
-        return $schemas ?? [];
+        return new Schemas($schemas ?? []);
     }
 }

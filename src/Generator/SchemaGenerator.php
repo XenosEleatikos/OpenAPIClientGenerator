@@ -12,7 +12,9 @@ use OpenApiClientGenerator\Model\OpenApi\SchemaType;
 use OpenApiClientGenerator\Printer\Printer;
 use OpenApiClientGenerator\Model\OpenApi\OpenAPI;
 use OpenApiClientGenerator\Model\OpenApi\Schema;
+
 use function array_merge;
+use function is_null;
 
 readonly class SchemaGenerator extends AbstractGenerator
 {
@@ -35,8 +37,12 @@ readonly class SchemaGenerator extends AbstractGenerator
         }
     }
 
-    public static function getPhpType(Schema $schema): string
+    public static function getPhpType(?Schema $schema): string
     {
+        if (is_null($schema)) {
+            return 'mixed';
+        }
+
         if (
             $schema->isEnumOfStrings()
             || $schema->isEnumOfIntegers()
@@ -67,6 +73,7 @@ readonly class SchemaGenerator extends AbstractGenerator
         return $anonymousSchemas ?? [];
     }
 
+    /** @return Schema[] */
     private function findAnonymousSchemasRecursive(string $parentClassName, Schema $schema): array
     {
         foreach ($schema->properties as $propertyName => $schemaOrReference) {
@@ -128,7 +135,7 @@ readonly class SchemaGenerator extends AbstractGenerator
             $this->classGenerator->generateSchema($name, $schema, $openAPI);
         }
         if ($schema->isEnum()) {
-            $this->enumGenerator->generateSchema($name, $schema, $openAPI);
+            $this->enumGenerator->generateSchema($name, $schema);
         }
     }
 

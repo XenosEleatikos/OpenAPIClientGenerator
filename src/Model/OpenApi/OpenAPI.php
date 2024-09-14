@@ -5,14 +5,11 @@ declare(strict_types=1);
 namespace OpenApiClientGenerator\Model\OpenApi;
 
 use JsonSerializable;
-use OpenApiClientGenerator\Generator\ApiGenerator;
 use stdClass;
 
 use function array_filter;
 use function array_shift;
 use function explode;
-use function is_null;
-use function ucfirst;
 
 class OpenAPI implements JsonSerializable
 {
@@ -24,6 +21,7 @@ class OpenAPI implements JsonSerializable
         public Paths $paths = new Paths(),
         public Webhooks $webhooks = new Webhooks(),
         public Components $components = new Components(),
+        /** @var array<string, string[]> */
         public array $security = [],
         public Tags $tags = new Tags(),
         public ?ExternalDocumentation $externalDocs = null,
@@ -60,7 +58,8 @@ class OpenAPI implements JsonSerializable
         ]);
     }
 
-    public function resolveReference(Reference $reference)
+    // @todo error handling
+    public function resolveReference(Reference $reference): null|Schema|Response|Parameter|Example|RequestBody|Header|SecurityScheme|Link
     {
         if ($reference->ref[0] === '#') {
             $path = explode('/', $reference->ref);
@@ -68,15 +67,18 @@ class OpenAPI implements JsonSerializable
             $found = self::get($this, $path);
         }
 
-        return $found;
+        return $found ?? null;
     }
 
-    private static function get(object $object, array $path)
+    // @todo Implement links, callbacks and path items
+    // @todo Implement external urls
+    /** @param string[] $path */
+    private static function get(object $object, array $path): Schema|Response|Parameter|Example|RequestBody|Header|SecurityScheme|Link
     {
         $property = array_shift($path);
 
         return empty($path)
-            ? $object->$property ?? $object[$property]
-            : self::get($object->$property ?? $object[$property], $path);
+            ? $object->$property ?? $object[$property] // @phpstan-ignore-line
+            : self::get($object->$property ?? $object[$property], $path); // @phpstan-ignore-line
     }
 }

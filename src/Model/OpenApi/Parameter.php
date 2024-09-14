@@ -57,7 +57,7 @@ class Parameter implements JsonSerializable
         }
     }
 
-    public function jsonSerialize(): object
+    public function jsonSerialize(): stdClass
     {
         return (object)array_filter([
             'name' => $this->name,

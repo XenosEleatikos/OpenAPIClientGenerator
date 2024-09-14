@@ -11,7 +11,7 @@ class Encoding implements JsonSerializable
 {
     public function __construct(
         public string              $contentType,
-        public HeadersOrReferences $header = new HeadersOrReferences(),
+        public HeadersOrReferences $headers = new HeadersOrReferences(),
         public ?string             $style = null,
     ) {
     }
@@ -20,15 +20,17 @@ class Encoding implements JsonSerializable
     {
         return new self(
             contentType: $encoding->contentType,
-            header: isset($encoding->headers) ? HeadersOrReferences::make($encoding->headers) : null,
-            style: $encoding->headers ?? null,
+            headers: HeadersOrReferences::make($encoding->headers ?? []),
+            style: $encoding->style ?? null,
         );
     }
 
     public function jsonSerialize(): stdClass
     {
         return (object)[
-            'properties' => $this->properties->jsonSerialize(),
+            'contentType' => $this->contentType,
+            'header' => $this->headers->jsonSerialize(),
+            'style' => $this->style,
         ];
     }
 }

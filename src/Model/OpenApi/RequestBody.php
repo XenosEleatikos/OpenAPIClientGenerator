@@ -7,6 +7,7 @@ namespace OpenApiClientGenerator\Model\OpenApi;
 use JsonSerializable;
 
 use stdClass;
+
 use function array_filter;
 
 class RequestBody implements JsonSerializable
@@ -40,7 +41,7 @@ class RequestBody implements JsonSerializable
     {
         return (object)array_filter([
             'description' => $this->description,
-            'content' => $this->content?->jsonSerialize(),
+            'content' => $this->content->jsonSerialize(),
             'required' => $this->required ?: null,
         ]);
     }

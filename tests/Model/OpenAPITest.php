@@ -7,6 +7,7 @@ namespace OpenApiClientGeneratorTest\Model;
 use OpenApiClientGenerator\Model\OpenApi\OpenAPI;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
+
 use function file_get_contents;
 use function json_decode;
 use function json_encode;

@@ -6,13 +6,14 @@ namespace OpenApiClientGenerator\Model\OpenApi\SecurityScheme\OAuth2;
 
 use JsonSerializable;
 use stdClass;
+
 use function array_filter;
 
 class Implicit implements JsonSerializable
 {
     public function __construct(
         public string $authorizationUrl,
-        /** @var array<string, string> */
+        /** @var array<string, string> $scopes */
         public array $scopes,
         public ?string $refreshUrl = null,
     ) {
@@ -20,7 +21,7 @@ class Implicit implements JsonSerializable
 
     public static function make(stdClass $implicit): self
     {
-        return new self(...array_filter([
+        return new self(...array_filter([ // @phpstan-ignore-line
             'authorizationUrl' => $implicit->authorizationUrl,
             'scopes' => isset($implicit->scopes) ? (array)$implicit->scopes : null,
             'refreshUrl' => $implicit->refreshUrl ?? null,

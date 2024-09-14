@@ -6,18 +6,19 @@ namespace OpenApiClientGenerator\Model\OpenApi;
 
 use JsonSerializable;
 use stdClass;
+
 use function array_filter;
 
 class Components implements JsonSerializable
 {
     public function __construct(
-        public Schemas                     $schemas = new Schemas(),
-        public ResponsesOrReferences       $responses = new ResponsesOrReferences(),
-        public ParametersOrReferences      $parameters = new ParametersOrReferences(),
-        public ExamplesOrReferences        $examples = new ExamplesOrReferences(),
-        public RequestBodiesOrReferences   $requestBodies = new RequestBodiesOrReferences(),
-        public HeadersOrReferences         $headers = new HeadersOrReferences(),
-        public SecuritySchemesOrReferences $securitySchemes = new SecuritySchemesOrReferences(),
+        public Schemas         $schemas = new Schemas(),
+        public Responses       $responses = new Responses(),
+        public Parameters      $parameters = new Parameters(),
+        public Examples        $examples = new Examples(),
+        public RequestBodies   $requestBodies = new RequestBodies(),
+        public Headers         $headers = new Headers(),
+        public SecuritySchemes $securitySchemes = new SecuritySchemes(),
     ) {
     }
 
@@ -25,12 +26,12 @@ class Components implements JsonSerializable
     {
         return new self(
             schemas: isset($component->schemas) ? Schemas::make($component->schemas) : new Schemas(),
-            responses: isset($component->responses) ? ResponsesOrReferences::make($component->responses) : new ResponsesOrReferences(),
-            parameters: isset($component->parameters) ? ParametersOrReferences::make($component->parameters) : new ParametersOrReferences(),
-            examples: isset($component->examples) ? ExamplesOrReferences::make($component->examples) : new ExamplesOrReferences(),
-            requestBodies: isset($component->requestBodies) ? RequestBodiesOrReferences::make($component->requestBodies) : new RequestBodiesOrReferences(),
-            headers: isset($component->headers) ? HeadersOrReferences::make($component->headers) : new HeadersOrReferences(),
-            securitySchemes: isset($component->securitySchemes) ? SecuritySchemesOrReferences::make($component->securitySchemes) : new SecuritySchemesOrReferences(),
+            responses: isset($component->responses) ? Responses::make($component->responses) : new Responses(),
+            parameters: isset($component->parameters) ? Parameters::make($component->parameters) : new Parameters(),
+            examples: isset($component->examples) ? Examples::make($component->examples) : new Examples(),
+            requestBodies: isset($component->requestBodies) ? RequestBodies::make($component->requestBodies) : new RequestBodies(),
+            headers: isset($component->headers) ? Headers::make($component->headers) : new Headers(),
+            securitySchemes: isset($component->securitySchemes) ? SecuritySchemes::make($component->securitySchemes) : new SecuritySchemes(),
         );
     }
 
@@ -59,4 +60,3 @@ class Components implements JsonSerializable
         ]);
     }
 }
-

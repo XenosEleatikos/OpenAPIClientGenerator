@@ -8,6 +8,7 @@ use JsonSerializable;
 use OpenApiClientGenerator\Model\OpenApi\SecurityScheme\OAuth2\ClientCredentials;
 use OpenApiClientGenerator\Model\OpenApi\SecurityScheme\OAuth2\Password;
 use stdClass;
+
 use function array_filter;
 
 class OAuthFlows implements JsonSerializable

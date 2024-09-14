@@ -34,7 +34,8 @@ class MediaType implements JsonSerializable
 
     public function resolveSchema(OpenAPI $openAPI): Schema
     {
-        return $this->schema instanceof Reference
+        // @todo Implement specific methods instead of "resolveReference" for better type hinting
+        return $this->schema instanceof Reference // @phpstan-ignore-line
             ? $openAPI->resolveReference($this->schema)
             : $this->schema;
     }

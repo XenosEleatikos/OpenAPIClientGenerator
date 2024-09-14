@@ -11,7 +11,7 @@ use stdClass;
 use function array_filter;
 use function array_map;
 
-/** @implements ArrayObject<string, SecurityScheme|Reference> */
+/** @extends ArrayObject<string, SecurityScheme|Reference> */
 class SecuritySchemesOrReferences extends ArrayObject implements JsonSerializable
 {
     public static function make(stdClass $securitySchemes): self
@@ -29,7 +29,7 @@ class SecuritySchemesOrReferences extends ArrayObject implements JsonSerializabl
     {
         return (object)array_filter(
             array_map(
-                fn(SecurityScheme|Reference $securityScheme) => $securityScheme->jsonSerialize(),
+                fn (SecurityScheme|Reference $securityScheme) => $securityScheme->jsonSerialize(),
                 $this->getArrayCopy()
             )
         );

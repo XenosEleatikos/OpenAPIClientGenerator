@@ -10,7 +10,7 @@ use stdClass;
 
 use function array_map;
 
-/** @implements ArrayObject<string, PathItem|Reference> */
+/** @extends ArrayObject<string, PathItem|Reference> */
 class Webhooks extends ArrayObject implements JsonSerializable
 {
     public static function make(stdClass $webhooks): self
@@ -28,10 +28,11 @@ class Webhooks extends ArrayObject implements JsonSerializable
         return $instance;
     }
 
-    public function jsonSerialize(): mixed
+    /** @return array<string, stdClass> */
+    public function jsonSerialize(): array
     {
         return array_map(
-            fn(PathItem $pathItem) => $pathItem->jsonSerialize(),
+            fn (PathItem|Reference $pathItemOrReference) => $pathItemOrReference->jsonSerialize(),
             $this->getArrayCopy()
         );
     }

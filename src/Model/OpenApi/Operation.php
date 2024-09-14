@@ -13,7 +13,7 @@ use function in_array;
 class Operation implements JsonSerializable
 {
     public function __construct(
-        /** @var string[] */
+        /** @var string[] $tags */
         public array                  $tags = [],
         public ?string                $summary = null,
         public ?string                $description = null,
@@ -24,7 +24,7 @@ class Operation implements JsonSerializable
         public ResponsesOrReferences  $responses = new ResponsesOrReferences(),
         public PathItemsOrReferences  $callbacks = new PathItemsOrReferences(),
         public bool                   $deprecated = false,
-        /** @var string */
+        /** @var string[] $security */
         public array                  $security = [],
         public Servers                $servers = new Servers(),
     ) {
@@ -58,7 +58,7 @@ class Operation implements JsonSerializable
             'operationId' => $this->operationId,
             'parameters' => $this->parameters->count() === 0 ? null : $this->parameters->jsonSerialize(),
             'requestBody' => $this->requestBody?->jsonSerialize(),
-            'responses' => $this->responses->count() === 0 ? null : $this->responses?->jsonSerialize(),
+            'responses' => $this->responses->count() === 0 ? null : $this->responses->jsonSerialize(),
             'callbacks' => $this->callbacks->count() === 0 ? null : $this->callbacks->jsonSerialize(),
             'security' => empty($this->security) ? null : $this->security,
             'servers' => $this->servers->count() === 0 ? $this->servers->jsonSerialize() : null,

@@ -2,41 +2,48 @@
 
 namespace OpenApiClientGenerator\Generator\SchemaGenerator;
 
-use Nette\PhpGenerator\ClassType;
-use Nette\PhpGenerator\EnumCase;
+use InvalidArgumentException;
+use LogicException;
 use Nette\PhpGenerator\EnumType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
 use OpenApiClientGenerator\Config\Config;
 use OpenApiClientGenerator\Generator\AbstractGenerator;
-use OpenApiClientGenerator\Generator\TypeHintGenerator;
 use OpenApiClientGenerator\Printer\Printer;
-use OpenApiClientGenerator\Model\OpenApi\OpenAPI;
 use OpenApiClientGenerator\Model\OpenApi\Schema;
-use stdClass;
 
-use function implode;
 use function ucfirst;
 
 readonly class EnumGenerator extends AbstractGenerator
 {
-    private TypeHintGenerator $typeHintGenerator;
-
     public function __construct(Config $config, Printer $printer)
     {
         parent::__construct($config, $printer);
-        $this->typeHintGenerator = new TypeHintGenerator($config, $printer);
     }
 
-    public function generateSchema(string $name, Schema $schema, OpenAPI $openAPI): void
+    public function generateSchema(string $name, Schema $schema): void
     {
+        if (!$schema->isEnumOfStrings() && !$schema->isEnumOfIntegers()) {
+            throw new InvalidArgumentException('Argument $schema of method ' . __METHOD__ . ' has to be an enum of strings or an enum of integers.');
+        }
+
         $namespace = new PhpNamespace($this->config->namespace . '\Schema');
         $class = new EnumType(ucfirst($name));
 
-        foreach ($schema->enum as $enum) {
-            $class
-                ->addCase($enum)
-                ->setValue($enum);
+        if ($schema->isEnumOfStrings()) {
+            foreach ($schema->enum as $enum) {
+                /** @var string $enum */
+                $class
+                    ->addCase($enum)
+                    ->setValue($enum);
+            }
+        } elseif ($schema->isEnumOfIntegers()) {
+            foreach ($schema->enum as $enum) {
+                /** @var int $enum */
+                $class
+                    ->addCase('CASE_' . $enum)
+                    ->setValue($enum);
+            }
         }
 
         $namespace->add($class);

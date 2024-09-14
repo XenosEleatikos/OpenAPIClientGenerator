@@ -10,21 +10,23 @@ use stdClass;
 
 use function array_map;
 
-/** @implements ArrayObject<int, Tag> */
+/** @extends ArrayObject<int, Tag> */
 class Tags extends ArrayObject implements JsonSerializable
 {
+    /** @param stdClass[] $tags */
     public static function make(array $tags): self
     {
         return new self(array_map(
-            fn(stdClass $tag): Tag => Tag::make($tag),
+            fn (stdClass $tag): Tag => Tag::make($tag),
             $tags
         ));
     }
 
+    /** @return array<int, stdClass> */
     public function jsonSerialize(): array
     {
         return array_map(
-            fn(Tag $tag) => $tag->jsonSerialize(),
+            fn (Tag $tag) => $tag->jsonSerialize(),
             $this->getArrayCopy()
         );
     }

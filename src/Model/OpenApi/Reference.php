@@ -6,6 +6,7 @@ namespace OpenApiClientGenerator\Model\OpenApi;
 
 use JsonSerializable;
 use stdClass;
+
 use function array_filter;
 
 class Reference implements JsonSerializable

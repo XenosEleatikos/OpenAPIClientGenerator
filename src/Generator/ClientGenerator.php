@@ -8,7 +8,6 @@ use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
 use OpenApiClientGenerator\Model\OpenApi\OpenAPI;
-use Psr\Http\Client\ClientInterface;
 
 readonly class ClientGenerator extends AbstractGenerator
 {
@@ -66,7 +65,7 @@ readonly class ClientGenerator extends AbstractGenerator
         $constructor
             ->addPromotedParameter('httpClient')
             ->setPrivate()
-            ->setType(ClientInterface::class);
+            ->setType('Psr\Http\Client\ClientInterfaceClientInterface');
         $constructor
             ->addPromotedParameter('config')
             ->setPrivate()

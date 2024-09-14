@@ -10,7 +10,7 @@ use stdClass;
 
 use function array_map;
 
-/** @implements ArrayObject<string, Header|Reference> */
+/** @extends ArrayObject<string, Header|Reference> */
 class HeadersOrReferences extends ArrayObject implements JsonSerializable
 {
     public static function make(stdClass $headersOrReferences): self
@@ -24,10 +24,11 @@ class HeadersOrReferences extends ArrayObject implements JsonSerializable
         return $instance;
     }
 
+    /** @return array<string, stdClass> */
     public function jsonSerialize(): array
     {
         return array_map(
-            fn(Header|Reference $header) => $header->jsonSerialize(),
+            fn (Header|Reference $header) => $header->jsonSerialize(),
             $this->getArrayCopy()
         );
     }

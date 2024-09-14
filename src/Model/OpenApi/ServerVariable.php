@@ -11,7 +11,7 @@ class ServerVariable implements JsonSerializable
 {
     public function __construct(
         public string $default,
-        /** @var string */
+        /** @var string[] $enum */
         public ?array $enum = null,
         public ?string $description = null,
     ) {

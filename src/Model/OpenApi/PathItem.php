@@ -43,6 +43,15 @@ class PathItem implements JsonSerializable
         );
     }
 
+    public static function makePathItemOrReference(stdClass $pathItemOrReference): self|Reference
+    {
+        if (isset($pathItemOrReference->{'$ref'})) {
+            return Reference::make($pathItemOrReference);
+        } else {
+            return self::make($pathItemOrReference);
+        }
+    }
+
     public function jsonSerialize(): stdClass
     {
         return (object)array_filter([

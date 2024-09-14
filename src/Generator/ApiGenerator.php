@@ -2,11 +2,11 @@
 
 namespace OpenApiClientGenerator\Generator;
 
-use GuzzleHttp\Psr7\Request;
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
 use OpenApiClientGenerator\Config\Config;
+use OpenApiClientGenerator\Generator\ApiGenerator\MethodNameGenerator;
 use OpenApiClientGenerator\Printer\Printer;
 use OpenApiClientGenerator\Model\OpenApi\MediaType;
 use OpenApiClientGenerator\Model\OpenApi\OpenAPI;
@@ -15,7 +15,6 @@ use OpenApiClientGenerator\Model\OpenApi\ParameterLocation;
 use OpenApiClientGenerator\Model\OpenApi\Paths;
 use OpenApiClientGenerator\Model\OpenApi\Reference;
 use OpenApiClientGenerator\Model\OpenApi\Tag;
-use Psr\Http\Client\ClientInterface;
 
 use function array_filter;
 use function array_unique;
@@ -26,9 +25,12 @@ use function ucfirst;
 
 readonly class ApiGenerator extends AbstractGenerator
 {
+    private MethodNameGenerator $methodNameGenerator;
+
     public function __construct(Config $config, Printer $printer)
     {
         parent::__construct($config, $printer);
+        $this->methodNameGenerator = new MethodNameGenerator();
     }
 
     public function generate(OpenAPI $openAPI, Tag $tag): void
@@ -81,7 +83,7 @@ readonly class ApiGenerator extends AbstractGenerator
             }
         }
 
-        return $operations ?? [];
+        return $operations ?? []; // @phpstan-ignore-line
     }
 
     public function addClassComments(Tag $tag, ClassType $class): void
@@ -100,7 +102,7 @@ readonly class ApiGenerator extends AbstractGenerator
     {
         $constructor = $class->addMethod('__construct');
         $constructor->addPromotedParameter('httpClient')
-            ->setType(ClientInterface::class);
+            ->setType('\Psr\Http\Client\ClientInterface');
         $constructor->addPromotedParameter('config')
             ->setType($this->config->namespace . '\Config\Config');
     }
@@ -114,7 +116,7 @@ readonly class ApiGenerator extends AbstractGenerator
     ): void {
         $pathParameters = $operation->parameters->getParametersByLocation(ParameterLocation::PATH);
 
-        $apiMethod = $class->addMethod($operation->operationId);
+        $apiMethod = $class->addMethod($this->methodNameGenerator->generateMethodName($method, $path, $operation));
 
         $returnTypes = [];
         $returnCodeSnippets = [];
@@ -150,7 +152,7 @@ readonly class ApiGenerator extends AbstractGenerator
         }
 
         $apiCall = '$result = $this->httpClient->sendRequest(' . PHP_EOL
-            . '    new \\' . Request::class . '(' . PHP_EOL
+            . '    new  \GuzzleHttp\Psr7\Request(' . PHP_EOL
             . '        method: \'' . $method . '\',' . PHP_EOL
             . '        uri: ' . $path . PHP_EOL
             . '    )' . PHP_EOL

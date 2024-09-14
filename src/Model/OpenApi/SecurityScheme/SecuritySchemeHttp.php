@@ -27,7 +27,7 @@ class SecuritySchemeHttp extends SecurityScheme implements JsonSerializable
     public static function make(stdClass $securityScheme): self
     {
         $scheme = $securityScheme->scheme;
-        if (preg_match('#^[Bb][Ee][Aa][Rr][Ee][Rr]$#', $scheme)){
+        if (preg_match('#^[Bb][Ee][Aa][Rr][Ee][Rr]$#', $scheme)) {
             return SecuritySchemeHttpBearer::make($securityScheme);
         }
 

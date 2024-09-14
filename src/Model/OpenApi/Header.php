@@ -53,7 +53,7 @@ class Header implements JsonSerializable
         }
     }
 
-    public function jsonSerialize(): object
+    public function jsonSerialize(): stdClass
     {
         return (object)array_filter([
             'description' => $this->description,

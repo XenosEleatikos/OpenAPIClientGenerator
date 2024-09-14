@@ -11,7 +11,7 @@ use stdClass;
 use function array_filter;
 use function array_map;
 
-/** @implements ArrayObject<string, Response|Reference> */
+/** @extends ArrayObject<string, Response|Reference> */
 class ResponsesOrReferences extends ArrayObject implements JsonSerializable
 {
     public static function make(stdClass $responses): self
@@ -29,7 +29,7 @@ class ResponsesOrReferences extends ArrayObject implements JsonSerializable
     {
         return (object)array_filter(
             array_map(
-                fn(Response|Reference $response) => $response->jsonSerialize(),
+                fn (Response|Reference $response) => $response->jsonSerialize(),
                 $this->getArrayCopy()
             )
         );

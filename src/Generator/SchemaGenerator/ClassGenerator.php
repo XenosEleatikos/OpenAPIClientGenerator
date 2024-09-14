@@ -73,7 +73,7 @@ readonly class ClassGenerator extends AbstractGenerator
             $factoryCall = match(SchemaGenerator::getPhpType($propertySchema)) {
                 'object' => self::getFactoryCall($propertyClassName, $propertyName),
                 'enum' => EnumGenerator::getFactoryCall($propertyClassName, $propertyName),
-                'scalar' => self::getPropertyCall($propertyName),
+                default => self::getPropertyCall($propertyName),
             };
 
             $factory
@@ -83,12 +83,12 @@ readonly class ClassGenerator extends AbstractGenerator
         $factory->addBody(');');
     }
 
-    public static function getPropertyCall($propertyName): string
+    public static function getPropertyCall(string $propertyName): string
     {
         return '$data->' . $propertyName;
     }
 
-    public static function getFactoryCall(string $propertyClassName, $propertyName): string
+    public static function getFactoryCall(string $propertyClassName, string $propertyName): string
     {
         return $propertyClassName . '::make($data->' . $propertyName.')';
     }

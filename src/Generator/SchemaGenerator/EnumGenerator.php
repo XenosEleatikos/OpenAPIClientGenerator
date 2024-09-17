@@ -2,15 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Xenos\OpenApiClientGenerator\Generator;
+namespace Xenos\OpenApiClientGenerator\Generator\SchemaGenerator;
 
 use InvalidArgumentException;
-use Xenos\OpenApiClientGenerator\Generator\Config\Config;
-use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
-use Xenos\OpenApi\Model\Schema;
 use Nette\PhpGenerator\EnumType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
+use Xenos\OpenApi\Model\Schema;
+use Xenos\OpenApiClientGenerator\Generator\AbstractGenerator;
+use Xenos\OpenApiClientGenerator\Generator\Config\Config;
+use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 
 use function ucfirst;
 

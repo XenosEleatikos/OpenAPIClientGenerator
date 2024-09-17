@@ -28,7 +28,8 @@
     "autoload": {
         "psr-4": {
             "Xenos\\OpenApiClientGenerator\\": "src",
-            "Xenos\\OpenApiClientGeneratorTest\\": "tests"
+            "Xenos\\OpenApiClientGeneratorTest\\": "tests",
+            "Xenos\\OpenApiClientGeneratorFixture\\": "fixtures"
         }
     },
     "scripts": {

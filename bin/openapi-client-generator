@@ -1,12 +1,12 @@
 #!/usr/bin/env php
 <?php
 $paths = [
-    __DIR__ . '/../vendor/autoload.php',
-    __DIR__ . '/../../../autoload.php'
+    __DIR__ . '/vendor/autoload.php',
+    dirname(__DIR__, 4) . '/vendor/autoload.php',
 ];
 foreach ($paths as $path) {
     if (is_file($path)) {
-        include $path;
+        require $path;
         break;
     }
 }

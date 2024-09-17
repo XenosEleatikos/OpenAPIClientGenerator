@@ -41,5 +41,8 @@
         "cs-fix": [
             "vendor/bin/php-cs-fixer fix"
         ]
-    }
+    },
+    "bin": [
+        "bin/openapi-client-generator"
+    ]
 }

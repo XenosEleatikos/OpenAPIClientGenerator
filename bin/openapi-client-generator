@@ -14,6 +14,6 @@ foreach ($paths as $path) {
 $cli = new Symfony\Component\Console\Application('A PHP code generator for OpenAPI clients', '1.0.0');
 $cli->setCatchExceptions(true);
 $cli->addCommands([
-    new \OpenApiClientGenerator\Command\GenerateCommand(),
+    new Xenos\OpenApiClientGenerator\Command\GenerateCommand(),
 ]);
 $cli->run();

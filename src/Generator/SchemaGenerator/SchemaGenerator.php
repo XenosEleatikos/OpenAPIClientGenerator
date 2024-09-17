@@ -1,16 +1,18 @@
 <?php
 
-namespace OpenApiClientGenerator\Generator;
+declare(strict_types=1);
 
-use OpenApiClientGenerator\Config\Config;
-use OpenApiClientGenerator\Generator\SchemaGenerator\EnumGenerator;
-use OpenApiClientGenerator\Generator\SchemaGenerator\ClassGenerator;
-use OpenApiClientGenerator\Generator\SchemaGenerator\SchemaClassNameGenerator;
-use OpenApiClientGenerator\Model\OpenApi\Schemas;
-use OpenApiClientGenerator\Model\OpenApi\SchemaType;
-use OpenApiClientGenerator\Printer\Printer;
-use OpenApiClientGenerator\Model\OpenApi\OpenAPI;
-use OpenApiClientGenerator\Model\OpenApi\Schema;
+namespace Xenos\OpenApiClientGenerator\Generator\SchemaGenerator;
+
+use Xenos\OpenApiClientGenerator\Generator\AbstractGenerator;
+use Xenos\OpenApiClientGenerator\Generator\ClassGenerator;
+use Xenos\OpenApiClientGenerator\Generator\Config\Config;
+use Xenos\OpenApiClientGenerator\Generator\EnumGenerator;
+use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
+use Xenos\OpenApi\Model\Schema;
+use Xenos\OpenApi\Model\Schemas;
+use Xenos\OpenApi\Model\SchemaType;
+use Xenos\OpenApi\Model\OpenAPI;
 
 use function array_merge;
 use function is_null;
@@ -58,7 +60,7 @@ readonly class SchemaGenerator extends AbstractGenerator
         return 'scalar';
     }
 
-    /** @return array<string, Schema> */
+    /** @return array<string, \Xenos\OpenApi\Model\Schema> */
     private function findAnonymousSchemas(OpenAPI $openAPI): array
     {
         foreach ($openAPI->components->schemas as $referencePath => $schema) {

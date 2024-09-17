@@ -1,8 +1,8 @@
 <?php
 
-namespace OpenApiClientGenerator\Generator\ApiGenerator;
+namespace Xenos\OpenApiClientGenerator\Generator\ApiGenerator;
 
-use OpenApiClientGenerator\Model\OpenApi\Operation;
+use Xenos\OpenApi\Model\Operation;
 
 use function array_map;
 use function explode;

@@ -1,20 +1,20 @@
 <?php
 
-namespace OpenApiClientGenerator\Generator;
+namespace Xenos\OpenApiClientGenerator\Generator;
 
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
-use OpenApiClientGenerator\Config\Config;
-use OpenApiClientGenerator\Generator\ApiGenerator\MethodNameGenerator;
-use OpenApiClientGenerator\Printer\Printer;
-use OpenApiClientGenerator\Model\OpenApi\MediaType;
-use OpenApiClientGenerator\Model\OpenApi\OpenAPI;
-use OpenApiClientGenerator\Model\OpenApi\Operation;
-use OpenApiClientGenerator\Model\OpenApi\ParameterLocation;
-use OpenApiClientGenerator\Model\OpenApi\Paths;
-use OpenApiClientGenerator\Model\OpenApi\Reference;
-use OpenApiClientGenerator\Model\OpenApi\Tag;
+use Xenos\OpenApiClientGenerator\Generator\ApiGenerator\MethodNameGenerator;
+use Xenos\OpenApiClientGenerator\Generator\Config\Config;
+use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
+use Xenos\OpenApi\Model\Reference;
+use Xenos\OpenApi\Model\MediaType;
+use Xenos\OpenApi\Model\OpenAPI;
+use Xenos\OpenApi\Model\Operation;
+use Xenos\OpenApi\Model\ParameterLocation;
+use Xenos\OpenApi\Model\Paths;
+use Xenos\OpenApi\Model\Tag;
 
 use function array_filter;
 use function array_unique;
@@ -50,7 +50,7 @@ readonly class ApiGenerator extends AbstractGenerator
             $this->addMethodToApi($class, $openAPI, ...$operation);
         }
 
-        $this->printer->printFile('src/Api/' . ucfirst($tag->name) . 'Api.php', $file);
+        $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Api/' . ucfirst($tag->name) . 'Api.php', $file);
     }
 
     /** @return array<int, array{0: string, 1: string, 2: Operation}> */

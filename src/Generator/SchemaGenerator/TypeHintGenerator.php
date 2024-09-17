@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace OpenApiClientGenerator\Generator;
+namespace Xenos\OpenApiClientGenerator\Generator\SchemaGenerator;
 
-use OpenApiClientGenerator\Config\Config;
-use OpenApiClientGenerator\Generator\SchemaGenerator\SchemaClassNameGenerator;
-use OpenApiClientGenerator\Model\OpenApi\OpenAPI;
-use OpenApiClientGenerator\Model\OpenApi\Reference;
-use OpenApiClientGenerator\Model\OpenApi\Schema;
-use OpenApiClientGenerator\Model\OpenApi\SchemaType;
-use OpenApiClientGenerator\Printer\Printer;
+use Xenos\OpenApiClientGenerator\Generator\AbstractGenerator;
+use Xenos\OpenApiClientGenerator\Generator\Config\Config;
+use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
+use Xenos\OpenApi\Model\Reference;
+use Xenos\OpenApi\Model\Schema;
+use Xenos\OpenApi\Model\SchemaType;
+use Xenos\OpenApi\Model\OpenAPI;
 
 use function is_null;
 
@@ -22,7 +22,6 @@ readonly class TypeHintGenerator extends AbstractGenerator
     {
         parent::__construct($config, $printer);
         $this->schemaClassNameGenerator = new SchemaClassNameGenerator();
-
     }
 
     /** @return string[] */

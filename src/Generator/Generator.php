@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace OpenApiClientGenerator\Generator;
+namespace Xenos\OpenApiClientGenerator\Generator;
 
-use OpenApiClientGenerator\Generator\SchemaGenerator\SchemaGenerator;
-use OpenApiClientGenerator\Model\OpenApi\OpenAPI;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaGenerator;
+use Xenos\OpenApi\Model\OpenAPI;
 
 readonly class Generator extends AbstractGenerator
 {

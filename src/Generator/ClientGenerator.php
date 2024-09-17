@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace OpenApiClientGenerator\Generator;
+namespace Xenos\OpenApiClientGenerator\Generator;
 
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
-use OpenApiClientGenerator\Model\OpenApi\OpenAPI;
+use Xenos\OpenApi\Model\OpenAPI;
 
 readonly class ClientGenerator extends AbstractGenerator
 {
@@ -42,7 +42,7 @@ readonly class ClientGenerator extends AbstractGenerator
         $file->setStrictTypes();
         $file->addNamespace($namespace);
 
-        $this->printer->printFile('/src/Client.php', $file);
+        $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Client.php', $file);
     }
 
     public function addClassComments(OpenAPI $openAPI, ClassType $class): void

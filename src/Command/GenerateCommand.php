@@ -2,13 +2,12 @@
 
 declare(strict_types=1);
 
-namespace OpenApiClientGenerator\Command;
+namespace Xenos\OpenApiClientGenerator\Command;
 
 use Nette\PhpGenerator\PsrPrinter;
-use OpenApiClientGenerator\Config\Config;
-use OpenApiClientGenerator\Generator\Generator;
-use OpenApiClientGenerator\Printer\Printer;
-use OpenApiClientGenerator\Model\OpenApi\OpenAPI;
+use Xenos\OpenApiClientGenerator\Generator\Config\Config;
+use Xenos\OpenApiClientGenerator\Generator\Generator;
+use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 use RuntimeException;
 use stdClass;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -16,6 +15,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Xenos\OpenApi\Model\OpenAPI;
 
 use function file_get_contents;
 use function is_string;
@@ -98,16 +98,12 @@ class GenerateCommand extends Command
             $absolutOutputPath = $outputPath;
         }
 
-        $config = new Config(
-            namespace: $rootNamespace,
-            directory: $absolutOutputPath
-        );
         $clientGenerator = new Generator(
-            $config,
-            new Printer(
-                $config,
-                new PsrPrinter()
-            )
+            new Config(
+                namespace: $rootNamespace,
+                directory: $absolutOutputPath
+            ),
+            new Printer(new PsrPrinter())
         );
         $clientGenerator->generate($specification);
 

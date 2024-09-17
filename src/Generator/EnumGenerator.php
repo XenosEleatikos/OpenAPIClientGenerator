@@ -1,16 +1,16 @@
 <?php
 
-namespace OpenApiClientGenerator\Generator\SchemaGenerator;
+declare(strict_types=1);
+
+namespace Xenos\OpenApiClientGenerator\Generator;
 
 use InvalidArgumentException;
-use LogicException;
+use Xenos\OpenApiClientGenerator\Generator\Config\Config;
+use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
+use Xenos\OpenApi\Model\Schema;
 use Nette\PhpGenerator\EnumType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
-use OpenApiClientGenerator\Config\Config;
-use OpenApiClientGenerator\Generator\AbstractGenerator;
-use OpenApiClientGenerator\Printer\Printer;
-use OpenApiClientGenerator\Model\OpenApi\Schema;
 
 use function ucfirst;
 
@@ -52,7 +52,7 @@ readonly class EnumGenerator extends AbstractGenerator
         $file->setStrictTypes();
         $file->addNamespace($namespace);
 
-        $this->printer->printFile('/src/Schema/' . ucfirst($name) . '.php', $file);
+        $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Schema/' . ucfirst($name) . '.php', $file);
     }
 
     public static function getFactoryCall(string $propertyClassName, string $propertyName): string

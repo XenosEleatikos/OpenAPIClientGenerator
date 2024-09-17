@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Generator\ApiGenerator;
+namespace Xenos\OpenApiClientGeneratorTest\Generator\ApiGenerator;
 
-use OpenApiClientGenerator\Generator\ApiGenerator\MethodNameGenerator;
-use OpenApiClientGenerator\Model\OpenApi\Operation;
+use Xenos\OpenApiClientGenerator\Generator\ApiGenerator\MethodNameGenerator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Xenos\OpenApi\Model\Operation;
 
 class MethodNameGeneratorTest extends TestCase
 {

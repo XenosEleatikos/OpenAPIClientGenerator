@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace OpenApiClientGenerator\Config;
+namespace Xenos\OpenApiClientGenerator\Generator\Config;
 
 class Config
 {

@@ -1,12 +1,12 @@
 <?php
 
-namespace OpenApiClientGenerator\Generator;
+namespace Xenos\OpenApiClientGenerator\Generator;
 
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\EnumType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
-use OpenApiClientGenerator\Model\OpenApi\OpenAPI;
+use Xenos\OpenApi\Model\OpenAPI;
 
 readonly class ConfigGenerator extends AbstractGenerator
 {
@@ -22,7 +22,7 @@ readonly class ConfigGenerator extends AbstractGenerator
         $file->setStrictTypes();
         $file->addNamespace($namespace);
 
-        $this->printer->printFile('/src/Config/Config.php', $file);
+        $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Config/Config.php', $file);
 
         $this->generateServerEnum($openAPI);
     }
@@ -43,7 +43,7 @@ readonly class ConfigGenerator extends AbstractGenerator
         $file->setStrictTypes();
         $file->addNamespace($namespace);
 
-        $this->printer->printFile('/src/Config/Server.php', $file);
+        $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Config/Server.php', $file);
 
     }
 

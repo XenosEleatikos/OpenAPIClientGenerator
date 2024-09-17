@@ -1,19 +1,18 @@
 <?php
 
-namespace OpenApiClientGenerator\Generator\SchemaGenerator;
+namespace Xenos\OpenApiClientGenerator\Generator;
 
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
-use OpenApiClientGenerator\Config\Config;
-use OpenApiClientGenerator\Generator\AbstractGenerator;
-use OpenApiClientGenerator\Generator\SchemaGenerator;
-use OpenApiClientGenerator\Generator\TypeHintGenerator;
-use OpenApiClientGenerator\Model\OpenApi\Reference;
-use OpenApiClientGenerator\Printer\Printer;
-use OpenApiClientGenerator\Model\OpenApi\OpenAPI;
-use OpenApiClientGenerator\Model\OpenApi\Schema;
+use Xenos\OpenApiClientGenerator\Generator\Config\Config;
+use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaClassNameGenerator;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaGenerator;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\TypeHintGenerator;
 use stdClass;
+use Xenos\OpenApi\Model\OpenAPI;
+use Xenos\OpenApi\Model\Schema;
 
 use function implode;
 use function ucfirst;
@@ -21,11 +20,13 @@ use function ucfirst;
 readonly class ClassGenerator extends AbstractGenerator
 {
     private TypeHintGenerator $typeHintGenerator;
+    private SchemaClassNameGenerator $schemaClassNameGenerator;
 
     public function __construct(Config $config, Printer $printer)
     {
         parent::__construct($config, $printer);
         $this->typeHintGenerator = new TypeHintGenerator($config, $printer);
+        $this->schemaClassNameGenerator = new SchemaClassNameGenerator();
     }
 
     public function generateSchema(string $name, Schema $schema, OpenAPI $openAPI): void
@@ -41,7 +42,7 @@ readonly class ClassGenerator extends AbstractGenerator
         $file->setStrictTypes();
         $file->addNamespace($namespace);
 
-        $this->printer->printFile('/src/Schema/' . ucfirst($name) . '.php', $file);
+        $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Schema/' . ucfirst($name) . '.php', $file);
     }
 
     private function addConstructor(ClassType $class, Schema $schema, OpenAPI $openAPI, string $schemaName): void
@@ -68,7 +69,7 @@ readonly class ClassGenerator extends AbstractGenerator
             ->addBody('return new self(');
 
         foreach ($schema->properties as $propertyName => $propertySchemaOrReference) {
-            list($propertyClassName, $propertySchema) = SchemaGenerator::createSchemaClassName($propertySchemaOrReference, $openAPI, $className, $propertyName);
+            list($propertyClassName, $propertySchema) = $this->schemaClassNameGenerator->createSchemaClassName($propertySchemaOrReference, $openAPI, $className, $propertyName);
 
             $factoryCall = match(SchemaGenerator::getPhpType($propertySchema)) {
                 'object' => self::getFactoryCall($propertyClassName, $propertyName),

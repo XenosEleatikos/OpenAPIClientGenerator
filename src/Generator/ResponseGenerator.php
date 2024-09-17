@@ -1,20 +1,21 @@
 <?php
 
-namespace OpenApiClientGenerator\Generator;
+namespace Xenos\OpenApiClientGenerator\Generator;
 
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
-use OpenApiClientGenerator\Config\Config;
-use OpenApiClientGenerator\Model\OpenApi\Operation;
-use OpenApiClientGenerator\Model\OpenApi\Schema;
-use OpenApiClientGenerator\Printer\Printer;
-use OpenApiClientGenerator\Model\OpenApi\MediaType;
-use OpenApiClientGenerator\Model\OpenApi\OpenAPI;
-use OpenApiClientGenerator\Model\OpenApi\Reference;
-use OpenApiClientGenerator\Model\OpenApi\Response;
-use OpenApiClientGenerator\Model\OpenApi\SchemaType;
+use Xenos\OpenApiClientGenerator\Generator\Config\Config;
+use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\TypeHintGenerator;
 use stdClass;
+use Xenos\OpenApi\Model\Reference;
+use Xenos\OpenApi\Model\Schema;
+use Xenos\OpenApi\Model\SchemaType;
+use Xenos\OpenApi\Model\MediaType;
+use Xenos\OpenApi\Model\OpenAPI;
+use Xenos\OpenApi\Model\Operation;
+use Xenos\OpenApi\Model\Response;
 
 use function implode;
 use function ucfirst;
@@ -82,7 +83,7 @@ readonly class ResponseGenerator extends AbstractGenerator
         $file->setStrictTypes();
         $file->addNamespace($namespace);
 
-        $this->printer->printFile('/src/Response/' . ucfirst($name) . '.php', $file);
+        $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Response/' . ucfirst($name) . '.php', $file);
     }
 
     private function addFactory(

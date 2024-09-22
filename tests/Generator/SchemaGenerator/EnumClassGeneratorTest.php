@@ -11,14 +11,14 @@ use Xenos\OpenApi\Model\OpenAPI;
 use Xenos\OpenApi\Model\Schema;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
-use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumGenerator;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumClassGenerator;
 
 use function sys_get_temp_dir;
 use function time;
 
-class EnumGeneratorTest extends TestCase
+class EnumClassGeneratorTest extends TestCase
 {
-    private EnumGenerator $enumClassGenerator;
+    private EnumClassGenerator $enumClassGenerator;
     private string $tmpDir;
 
     protected function setUp(): void
@@ -26,7 +26,7 @@ class EnumGeneratorTest extends TestCase
         $this->tmpDir = sys_get_temp_dir() . '/openApiClient/' . time();
         $config = new Config(namespace: 'OpenApiClientGeneratorFixture', directory: $this->tmpDir);
 
-        $this->enumClassGenerator = new EnumGenerator(
+        $this->enumClassGenerator = new EnumClassGenerator(
             $config,
             new Printer(new PsrPrinter())
         );
@@ -50,15 +50,10 @@ class EnumGeneratorTest extends TestCase
     public static function provideDataForGenerateEnumOfStrings(): array
     {
         return [
-            'enum of strings' => [
-                'schemaName' => 'EnumOfStrings',
-                'file' => 'Schema/EnumOfStrings.php',
-                'schema' => (new Schema(enum: ['available', 'pending', 'sold'])),
-            ],
-            'enum of integers' => [
-                'schemaName' => 'EnumOfIntegers',
-                'file' => 'Schema/EnumOfIntegers.php',
-                'schema' => (new Schema(enum: [1, 2, 3])),
+            'enum of scalar values' => [
+                'schemaName' => 'EnumOfScalarValues',
+                'file' => 'Schema/EnumOfScalarValues.php',
+                'schema' => (new Schema(enum: [1, 2.34, 'three'])),
             ],
         ];
     }

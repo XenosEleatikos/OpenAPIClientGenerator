@@ -1,6 +1,6 @@
 <?php
 
-namespace Xenos\OpenApiClientGenerator\Generator;
+namespace Xenos\OpenApiClientGenerator\Generator\SchemaGenerator;
 
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\PhpFile;
@@ -8,23 +8,23 @@ use Nette\PhpGenerator\PhpNamespace;
 use stdClass;
 use Xenos\OpenApi\Model\OpenAPI;
 use Xenos\OpenApi\Model\Schema;
+use Xenos\OpenApiClientGenerator\Generator\AbstractGenerator;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
-use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumGenerator;
-use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaClassNameGenerator;
-use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaGenerator;
-use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\TypeHintGenerator;
 
 use function implode;
 use function ucfirst;
 
-readonly class ClassGenerator extends AbstractGenerator
+readonly class ClassGenerator extends AbstractGenerator implements SchemaGeneratorInterface
 {
     private TypeHintGenerator $typeHintGenerator;
     private SchemaClassNameGenerator $schemaClassNameGenerator;
+    private SchemaGeneratorContainer $schemaGeneratorContainer;
 
     public function __construct(Config $config, Printer $printer)
     {
+        $this->schemaGeneratorContainer = new SchemaGeneratorContainer($config, $printer);
+
         parent::__construct($config, $printer);
         $this->typeHintGenerator = new TypeHintGenerator($config, $printer);
         $this->schemaClassNameGenerator = new SchemaClassNameGenerator();
@@ -72,11 +72,10 @@ readonly class ClassGenerator extends AbstractGenerator
         foreach ($schema->properties as $propertyName => $propertySchemaOrReference) {
             list($propertyClassName, $propertySchema) = $this->schemaClassNameGenerator->createSchemaClassName($propertySchemaOrReference, $openAPI, $className, $propertyName);
 
-            $factoryCall = match(SchemaGenerator::getPhpType($propertySchema)) {
-                'object' => self::getFactoryCall($propertyClassName, $propertyName),
-                'enum' => EnumGenerator::getFactoryCall($propertyClassName, $propertyName),
-                default => self::getPropertyCall($propertyName),
-            };
+            $schemaGenerator = $this->schemaGeneratorContainer->getSchemaGenerator($propertySchema);
+            $factoryCall = $schemaGenerator === null
+                ? self::getPropertyCall($propertyName)
+                : $schemaGenerator::getFactoryCall($propertyClassName, $propertyName);
 
             $factory
                 ->addBody('    '.$propertyName.': ' . $factoryCall.',');

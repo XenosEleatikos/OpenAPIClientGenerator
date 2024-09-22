@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use Nette\PhpGenerator\EnumType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
+use Xenos\OpenApi\Model\OpenAPI;
 use Xenos\OpenApi\Model\Schema;
 use Xenos\OpenApiClientGenerator\Generator\AbstractGenerator;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
@@ -15,14 +16,14 @@ use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 
 use function ucfirst;
 
-readonly class EnumGenerator extends AbstractGenerator
+readonly class EnumGenerator extends AbstractGenerator implements SchemaGeneratorInterface
 {
     public function __construct(Config $config, Printer $printer)
     {
         parent::__construct($config, $printer);
     }
 
-    public function generateSchema(string $name, Schema $schema): void
+    public function generateSchema(string $name, Schema $schema, OpenAPI $openAPI): void
     {
         if (!$schema->isEnumOfStrings() && !$schema->isEnumOfIntegers()) {
             throw new InvalidArgumentException('Argument $schema of method ' . __METHOD__ . ' has to be an enum of strings or an enum of integers.');

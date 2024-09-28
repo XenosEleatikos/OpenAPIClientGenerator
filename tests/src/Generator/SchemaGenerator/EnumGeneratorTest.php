@@ -24,7 +24,7 @@ class EnumGeneratorTest extends TestCase
     protected function setUp(): void
     {
         $this->tmpDir = sys_get_temp_dir() . '/openApiClient/' . time();
-        $config = new Config(namespace: 'OpenApiClientGeneratorFixture', directory: $this->tmpDir);
+        $config = new Config(namespace: 'Xenos\OpenApiClientGeneratorFixture', directory: $this->tmpDir);
 
         $this->enumClassGenerator = new EnumGenerator(
             $config,
@@ -42,7 +42,7 @@ class EnumGeneratorTest extends TestCase
 
         self::assertFileExists($this->tmpDir . '/src/' . $file);
         self::assertFileEquals(
-            __DIR__ . '/../../../fixtures/' . $file,
+            __DIR__ . '/../../../../fixtures/' . $file,
             $this->tmpDir . '/src/' . $file
         );
     }

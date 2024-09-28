@@ -11,7 +11,7 @@ use Xenos\OpenApi\Model\OpenAPI;
 class SchemaClassNameGenerator
 {
     /**
-     * @return array{0: string, 1: \Xenos\OpenApi\Model\Schema}
+     * @return array{0: string, 1: Schema}
      */
     public function createSchemaClassName(
         Schema|Reference $schemaOrReference,
@@ -23,7 +23,7 @@ class SchemaClassNameGenerator
             $propertyClassName = $this->createSchemaClassNameFromReferencePath($schemaOrReference->ref);
 
             $schemaOrReference = $openAPI->resolveReference($schemaOrReference);
-            /** @var \Xenos\OpenApi\Model\Schema $schemaOrReference */
+            /** @var Schema $schemaOrReference */
         } else {
             $propertyClassName = $this->createSchemaClassNameFromParentClassNameAndProperty(
                 $parentClassName,

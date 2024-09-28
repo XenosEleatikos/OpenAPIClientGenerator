@@ -24,7 +24,7 @@ class EnumClassGeneratorTest extends TestCase
     protected function setUp(): void
     {
         $this->tmpDir = sys_get_temp_dir() . '/openApiClient/' . time();
-        $config = new Config(namespace: 'OpenApiClientGeneratorFixture', directory: $this->tmpDir);
+        $config = new Config(namespace: 'Xenos\OpenApiClientGeneratorFixture', directory: $this->tmpDir);
 
         $this->enumClassGenerator = new EnumClassGenerator(
             $config,
@@ -42,7 +42,7 @@ class EnumClassGeneratorTest extends TestCase
 
         self::assertFileExists($this->tmpDir . '/src/' . $file);
         self::assertFileEquals(
-            __DIR__ . '/../../../fixtures/' . $file,
+            __DIR__ . '/../../../../fixtures/' . $file,
             $this->tmpDir . '/src/' . $file
         );
     }
@@ -50,10 +50,30 @@ class EnumClassGeneratorTest extends TestCase
     public static function provideDataForGenerateEnumOfStrings(): array
     {
         return [
-            'enum of scalar values' => [
-                'schemaName' => 'EnumOfScalarValues',
-                'file' => 'Schema/EnumOfScalarValues.php',
+            'enum of integer, float and string' => [
+                'schemaName' => 'EnumOfIntegerFloatAndString',
+                'file' => 'Schema/EnumOfIntegerFloatAndString.php',
                 'schema' => (new Schema(enum: [1, 2.34, 'three'])),
+            ],
+            'enum of several integers and strings' => [
+                'schemaName' => 'EnumOfSeveralIntegersAndStrings',
+                'file' => 'Schema/EnumOfSeveralIntegersAndStrings.php',
+                'schema' => (new Schema(enum: [1, 2, 'three', 'four'])),
+            ],
+            'enum of string and true' => [
+                'schemaName' => 'EnumOfStringAndTrue',
+                'file' => 'Schema/EnumOfStringAndTrue.php',
+                'schema' => (new Schema(enum: ['one', true])),
+            ],
+            'enum of string and false' => [
+                'schemaName' => 'EnumOfStringAndFalse',
+                'file' => 'Schema/EnumOfStringAndFalse.php',
+                'schema' => (new Schema(enum: ['one', false])),
+            ],
+            'enum of string and true and false' => [
+                'schemaName' => 'EnumOfStringAndTrueAndFalse',
+                'file' => 'Schema/EnumOfStringAndTrueAndFalse.php',
+                'schema' => (new Schema(enum: ['one', true, false])),
             ],
         ];
     }

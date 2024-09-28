@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace OpenApiClientGeneratorFixture\Schema;
+namespace Xenos\OpenApiClientGeneratorFixture\Schema;
 
 enum EnumOfStrings: string
 {

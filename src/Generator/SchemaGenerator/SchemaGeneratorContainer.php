@@ -9,8 +9,6 @@ use Xenos\OpenApi\Model\SchemaType;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 
-use function is_null;
-
 readonly class SchemaGeneratorContainer
 {
     private ClassGenerator $classGenerator;
@@ -24,12 +22,8 @@ readonly class SchemaGeneratorContainer
         $this->enumClassGenerator = new EnumClassGenerator($config, $printer);
     }
 
-    public function getSchemaGenerator(?Schema $schema): ?SchemaGeneratorInterface
+    public function getSchemaGenerator(Schema $schema): ?SchemaGeneratorInterface
     {
-        if (is_null($schema)) {
-            return null;
-        }
-
         if ($schema->isEnumOfStrings() || $schema->isEnumOfIntegers()) {
             return $this->enumGenerator;
         }

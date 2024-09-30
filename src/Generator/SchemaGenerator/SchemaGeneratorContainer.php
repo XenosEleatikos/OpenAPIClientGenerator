@@ -17,7 +17,7 @@ readonly class SchemaGeneratorContainer
 
     public function __construct(Config $config, Printer $printer)
     {
-        $this->classGenerator = new ClassGenerator($config, $printer);
+        $this->classGenerator = new ClassGenerator($config, $printer, $this);
         $this->enumGenerator = new EnumGenerator($config, $printer);
         $this->enumClassGenerator = new EnumClassGenerator($config, $printer);
     }

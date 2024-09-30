@@ -21,9 +21,9 @@ readonly class ClassGenerator extends AbstractGenerator implements SchemaGenerat
     private SchemaClassNameGenerator $schemaClassNameGenerator;
     private SchemaGeneratorContainer $schemaGeneratorContainer;
 
-    public function __construct(Config $config, Printer $printer)
+    public function __construct(Config $config, Printer $printer, SchemaGeneratorContainer $schemaGeneratorContainer)
     {
-        $this->schemaGeneratorContainer = new SchemaGeneratorContainer($config, $printer);
+        $this->schemaGeneratorContainer = $schemaGeneratorContainer;
 
         parent::__construct($config, $printer);
         $this->typeHintGenerator = new TypeHintGenerator($config, $printer);

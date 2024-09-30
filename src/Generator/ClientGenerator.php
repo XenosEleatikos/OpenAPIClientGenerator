@@ -65,7 +65,7 @@ readonly class ClientGenerator extends AbstractGenerator
         $constructor
             ->addPromotedParameter('httpClient')
             ->setPrivate()
-            ->setType('Psr\Http\Client\ClientInterfaceClientInterface');
+            ->setType('Psr\Http\Client\ClientInterface');
         $constructor
             ->addPromotedParameter('config')
             ->setPrivate()

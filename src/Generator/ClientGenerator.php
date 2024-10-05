@@ -16,9 +16,6 @@ readonly class ClientGenerator extends AbstractGenerator
 {
     public function generate(OpenAPI $openAPI): void
     {
-        $configGenerator = new ConfigGenerator($this->config, $this->printer);
-        $configGenerator->generate($openAPI);
-
         $namespace = new PhpNamespace($this->config->namespace);
         $class = new ClassType('Client');
         $this->addConstructor($class);

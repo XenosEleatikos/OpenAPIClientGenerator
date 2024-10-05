@@ -7,10 +7,13 @@ namespace Xenos\OpenApiClientGenerator\Generator;
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
+use Psr\Http\Client\ClientInterface;
 use Xenos\OpenApi\Model\OpenAPI;
 use Xenos\OpenApi\Model\Tag;
 
+use function array_filter;
 use function array_merge;
+use function implode;
 
 readonly class ClientGenerator extends AbstractGenerator
 {
@@ -33,7 +36,7 @@ readonly class ClientGenerator extends AbstractGenerator
         foreach ($tags as $tag) {
             $tagName = $tag instanceof Tag ? $tag->name : $tag;
             $comment = $tag instanceof Tag ? $tag->description : null;
-            $apiGenerator->generate($openAPI, $tagName, $comment);
+            $apiGenerator->generate($openAPI, $tag, $comment);
 
             $classname = 'Api\\' . ApiGenerator::getClassName($tagName);
 
@@ -52,7 +55,7 @@ readonly class ClientGenerator extends AbstractGenerator
         $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Client.php', $file);
     }
 
-    public function addClassComments(OpenAPI $openAPI, ClassType $class): void
+    private function addClassComments(OpenAPI $openAPI, ClassType $class): void
     {
         $comments[] = '# ' . $openAPI->info->title;
         $comments[] = 'Version: ' . $openAPI->info->version;
@@ -63,16 +66,16 @@ readonly class ClientGenerator extends AbstractGenerator
         }
 
         $class
-            ->setComment(\implode(PHP_EOL . PHP_EOL, \array_filter($comments)));
+            ->setComment(implode(PHP_EOL . PHP_EOL, array_filter($comments)));
     }
 
-    public function addConstructor(ClassType $class): void
+    private function addConstructor(ClassType $class): void
     {
         $constructor = $class->addMethod('__construct');
         $constructor
             ->addPromotedParameter('httpClient')
             ->setPrivate()
-            ->setType('Psr\Http\Client\ClientInterface');
+            ->setType(ClientInterface::class);
         $constructor
             ->addPromotedParameter('config')
             ->setPrivate()

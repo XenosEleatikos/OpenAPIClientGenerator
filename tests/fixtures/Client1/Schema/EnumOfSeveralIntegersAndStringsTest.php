@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Xenos\OpenApiClientGeneratorFixtureTest\Schema;
+namespace Xenos\OpenApiClientGeneratorFixtureTest\Client1\Schema;
 
 use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\Attributes\TestWith;

@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Xenos\OpenApiClientGeneratorFixture\Schema;
+namespace Xenos\OpenApiClientGeneratorFixture\Client1\Schema;
 
-class EnumOfStringAndFalse
+class EnumOfStringAndTrue
 {
-    public string|false $value;
+    public string|true $value;
 
-    private function __construct(string|false $value)
+    private function __construct(string|true $value)
     {
         $this->value = $value;
     }
 
-    public static function from(string|false $value): self
+    public static function from(string|true $value): self
     {
         return match ($value) {
             'one' => self::caseOne(),
-            false => self::caseFalse(),
+            true => self::caseTrue(),
             default => throw new \ValueError($value . ' is not a valid backing value for enum ' . self::class),
         };
     }
@@ -28,9 +28,9 @@ class EnumOfStringAndFalse
         return $value ??= new self('one');
     }
 
-    public static function caseFalse(): self
+    public static function caseTrue(): self
     {
         static $value = null;
-        return $value ??= new self(false);
+        return $value ??= new self(true);
     }
 }

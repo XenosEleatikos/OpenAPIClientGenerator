@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Xenos\OpenApiClientGeneratorFixture\Schema;
+namespace Xenos\OpenApiClientGeneratorFixture\Client1\Schema;
 
 class EnumOfIntegerFloatAndString
 {

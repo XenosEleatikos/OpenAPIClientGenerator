@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Xenos\OpenApiClientGeneratorFixture;
+namespace Xenos\OpenApiClientGeneratorFixture\Client1;
 
 /**
  * # Pet Shop API

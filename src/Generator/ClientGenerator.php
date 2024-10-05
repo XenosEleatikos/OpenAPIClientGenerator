@@ -8,6 +8,9 @@ use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
 use Xenos\OpenApi\Model\OpenAPI;
+use Xenos\OpenApi\Model\Tag;
+
+use function array_merge;
 
 readonly class ClientGenerator extends AbstractGenerator
 {
@@ -24,16 +27,23 @@ readonly class ClientGenerator extends AbstractGenerator
         $namespace->add($class);
 
         $apiGenerator = new ApiGenerator($this->config, $this->printer);
-        // @todo Implement API methods without tags
-        foreach ($openAPI->tags as $tag) {
-            $apiGenerator->generate($openAPI, $tag);
 
-            $classname = 'Api\\' . ApiGenerator::getClassName($tag);
+        /** @var (Tag|string)[] $tags */
+        $tags = array_merge(
+            (array)$openAPI->tags,
+            $openAPI->findUndeclaredTags()
+        );
+        foreach ($tags as $tag) {
+            $tagName = $tag instanceof Tag ? $tag->name : $tag;
+            $comment = $tag instanceof Tag ? $tag->description : null;
+            $apiGenerator->generate($openAPI, $tagName, $comment);
 
-            $method = $class->addMethod($tag->name);
-            $method->addBody('static $' . $tag->name . 'Api = null;');
+            $classname = 'Api\\' . ApiGenerator::getClassName($tagName);
+
+            $method = $class->addMethod($tagName);
+            $method->addBody('static $' . $tagName . 'Api = null;');
             $method->addBody(
-                'return $' . $tag->name . 'Api ??= new ' . $classname . '($this->httpClient, $this->config);'
+                'return $' . $tagName . 'Api ??= new ' . $classname . '($this->httpClient, $this->config);'
             );
             $method->setReturnType($this->config->namespace . '\\' . $classname);
         }

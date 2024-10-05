@@ -33,12 +33,12 @@ readonly class ApiGenerator extends AbstractGenerator
         $this->methodNameGenerator = new MethodNameGenerator();
     }
 
-    public function generate(OpenAPI $openAPI, Tag $tag): void
+    public function generate(OpenAPI $openAPI, string $tagName, ?string $comment): void
     {
         $namespace = new PhpNamespace($this->config->namespace . '\Api');
-        $class = new ClassType($this->getClassName($tag));
+        $class = new ClassType($this->getClassName($tagName));
         $this->addConstructor($class);
-        $this->addClassComments($tag, $class);
+        $this->addClassComments($tagName, $comment, $class);
 
         $namespace->add($class);
 
@@ -46,11 +46,11 @@ readonly class ApiGenerator extends AbstractGenerator
         $file->setStrictTypes();
         $file->addNamespace($namespace);
 
-        foreach (self::getAllOperations($openAPI->paths, $tag->name) as $operation) {
+        foreach (self::getAllOperations($openAPI->paths, $tagName) as $operation) {
             $this->addMethodToApi($class, $openAPI, ...$operation);
         }
 
-        $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Api/' . ucfirst($tag->name) . 'Api.php', $file);
+        $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Api/' . ucfirst($tagName) . 'Api.php', $file);
     }
 
     /** @return array<int, array{0: string, 1: string, 2: Operation}> */
@@ -86,10 +86,10 @@ readonly class ApiGenerator extends AbstractGenerator
         return $operations ?? []; // @phpstan-ignore-line
     }
 
-    public function addClassComments(Tag $tag, ClassType $class): void
+    public function addClassComments(string $tagName, ?string $comment, ClassType $class): void
     {
-        $comments[] = '# ' . $tag->name;
-        $comments[] = $tag->description;
+        $comments[] = '# ' . $tagName;
+        $comments[] = $comment;
         if (isset($tag->externalDocs)) {
             $comments[] = '@link ' . $tag->externalDocs->url;
         }
@@ -179,8 +179,8 @@ readonly class ApiGenerator extends AbstractGenerator
         return '\'' . $statusCode . '\'';
     }
 
-    public static function getClassName(Tag $tag): string
+    public static function getClassName(string $tagName): string
     {
-        return ucfirst($tag->name) . 'Api';
+        return ucfirst($tagName) . 'Api';
     }
 }

@@ -8,6 +8,7 @@ use Nette\PhpGenerator\PsrPrinter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Xenos\OpenApi\Model\Contact;
+use Xenos\OpenApi\Model\ExternalDocumentation;
 use Xenos\OpenApi\Model\Info;
 use Xenos\OpenApi\Model\License;
 use Xenos\OpenApi\Model\OpenAPI;
@@ -255,6 +256,7 @@ class ClientGeneratorTest extends TestCase
                             url: 'https://opensource.org/licenses/MIT'
                         ),
                     ),
+                    externalDocs: new ExternalDocumentation(url: 'https://example.com', description: 'Find more info here')
                 ),
             ],
             'Client with license URL' => [

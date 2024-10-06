@@ -20,6 +20,12 @@ namespace Xenos\OpenApiClientGeneratorFixture\Client3;
  *
  * E-mail: [apiteam@swagger.io](apiteam@swagger.io)
  *
+ * ## Documentation
+ *
+ * Find more info here
+ *
+ * https://example.com
+ *
  * ## Terms of service
  *
  * http://swagger.io/terms/

@@ -29,6 +29,11 @@ class ClassCommentGenerator
                 $comments[] = 'E-mail: [' . $openAPI->info->contact->email . '](' . $openAPI->info->contact->email . ')';
             }
         }
+        if ($openAPI->externalDocs !== null) {
+            $comments[] = '## Documentation';
+            $comments[] = $openAPI->externalDocs->description;
+            $comments[] = $openAPI->externalDocs->url;
+        }
         if (!empty($openAPI->info->termsOfService)) {
             $comments[] = '## Terms of service';
             $comments[] = $openAPI->info->termsOfService;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Xenos\OpenApiClientGenerator\Generator;
+namespace Xenos\OpenApiClientGenerator\Generator\ClientGenerator;
 
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\PhpFile;
@@ -10,19 +10,31 @@ use Nette\PhpGenerator\PhpNamespace;
 use Psr\Http\Client\ClientInterface;
 use Xenos\OpenApi\Model\OpenAPI;
 use Xenos\OpenApi\Model\Tag;
+use Xenos\OpenApiClientGenerator\Generator\AbstractGenerator;
+use Xenos\OpenApiClientGenerator\Generator\ApiGenerator;
+use Xenos\OpenApiClientGenerator\Generator\Config\Config;
+use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 
-use function array_filter;
 use function array_merge;
-use function implode;
 
 readonly class ClientGenerator extends AbstractGenerator
 {
+    private ClassCommentGenerator $classCommentGenerator;
+
+    public function __construct(
+        Config $config,
+        Printer $printer,
+    ) {
+        parent::__construct($config, $printer);
+        $this->classCommentGenerator = new ClassCommentGenerator();
+    }
+
     public function generate(OpenAPI $openAPI): void
     {
         $namespace = new PhpNamespace($this->config->namespace);
         $class = new ClassType('Client');
         $this->addConstructor($class);
-        $this->addClassComments($openAPI, $class);
+        $class->setComment($this->classCommentGenerator->generateClassComments($openAPI));
 
         $namespace->add($class);
 
@@ -53,20 +65,6 @@ readonly class ClientGenerator extends AbstractGenerator
         $file->addNamespace($namespace);
 
         $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Client.php', $file);
-    }
-
-    private function addClassComments(OpenAPI $openAPI, ClassType $class): void
-    {
-        $comments[] = '# ' . $openAPI->info->title;
-        $comments[] = 'Version: ' . $openAPI->info->version;
-        $comments[] = $openAPI->info->summary;
-        $comments[] = $openAPI->info->description;
-        if (isset($openAPI->info->termsOfService)) {
-            $comments[] = 'Terms of service: ' . $openAPI->info->termsOfService;
-        }
-
-        $class
-            ->setComment(implode(PHP_EOL . PHP_EOL, array_filter($comments)));
     }
 
     private function addConstructor(ClassType $class): void

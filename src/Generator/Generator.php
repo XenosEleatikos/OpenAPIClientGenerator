@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Xenos\OpenApiClientGenerator\Generator;
 
-use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaGenerator;
 use Xenos\OpenApi\Model\OpenAPI;
+use Xenos\OpenApiClientGenerator\Generator\ClientGenerator\ClientGenerator;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaGenerator;
 
 readonly class Generator extends AbstractGenerator
 {

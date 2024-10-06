@@ -7,7 +7,9 @@ namespace Xenos\OpenApiClientGeneratorTest\Generator;
 use Nette\PhpGenerator\PsrPrinter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Xenos\OpenApi\Model\Contact;
 use Xenos\OpenApi\Model\Info;
+use Xenos\OpenApi\Model\License;
 use Xenos\OpenApi\Model\OpenAPI;
 use Xenos\OpenApi\Model\Operation;
 use Xenos\OpenApi\Model\PathItem;
@@ -15,12 +17,12 @@ use Xenos\OpenApi\Model\Paths;
 use Xenos\OpenApi\Model\Tag;
 use Xenos\OpenApi\Model\Tags;
 use Xenos\OpenApi\Model\Version;
-use Xenos\OpenApiClientGenerator\Generator\ClientGenerator;
+use Xenos\OpenApiClientGenerator\Generator\ClientGenerator\ClientGenerator;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 
-use function time;
 use function sys_get_temp_dir;
+use function time;
 
 class ClientGeneratorTest extends TestCase
 {
@@ -32,7 +34,8 @@ class ClientGeneratorTest extends TestCase
         $this->tmpDir = sys_get_temp_dir() . '/openApiClient/' . time();
     }
 
-    #[DataProvider('provideDataForTestGenerate')]
+    #[DataProvider('provideDataToTestApiFactories')]
+    #[DataProvider('provideDataToTestClassComment')]
     public function testGenerate(
         string $namespace,
         OpenAPI $openAPI,
@@ -53,16 +56,9 @@ class ClientGeneratorTest extends TestCase
         );
     }
 
-    public static function provideDataForTestGenerate(): array
+    public static function provideDataToTestApiFactories(): array
     {
         return [
-            'Empty client' => [
-                'namespace' => 'Client2',
-                'openAPI' => new OpenAPI(
-                    openapi: Version::make('3.1.0'),
-                    info: new Info('Pet Shop API', '1.0.0'),
-                ),
-            ],
             'APIs from declared tags' => [
                 'namespace' => 'Client1',
                 'openAPI' => new OpenAPI(
@@ -218,6 +214,87 @@ class ClientGeneratorTest extends TestCase
                         [
                             new Tag(name: 'pet'),
                         ]
+                    ),
+                ),
+            ],
+        ];
+    }
+
+    public static function provideDataToTestClassComment(): array
+    {
+        return [
+            'Empty client' => [
+                'namespace' => 'Client2',
+                'openAPI' => new OpenAPI(
+                    openapi: Version::make('3.1.0'),
+                    info: new Info('Pet Shop API', '1.0.0'),
+                ),
+            ],
+            'Client with full information in doc comment' => [
+                'namespace' => 'Client3',
+                'openAPI' => new OpenAPI(
+                    openapi: Version::make('3.1.0'),
+                    info: new Info(
+                        title: 'Pet Shop API',
+                        version: '1.0.0',
+                        summary: 'A sample Pet Store Server based on the OpenAPI 3.1',
+                        description: 'This is a sample Pet Store Server based on the OpenAPI 3.1 specification. '
+                        . ' You can find out more about Swagger at [https://swagger.io](https://swagger.io). In '
+                        . 'the third iteration of the pet store, we\'ve switched to the design first approach!' . PHP_EOL
+                        . 'You can now help us improve the API whether it\'s by making changes to the definition '
+                        . 'itself or to the code. That way, with time, we can improve the API in general, and expose '
+                        . 'some of the new features in OAS3.',
+                        termsOfService: 'http://swagger.io/terms/',
+                        contact: new Contact(
+                            name: 'OpenAPI Specification v3.1.0',
+                            url: 'https://spec.openapis.org/oas/latest.html',
+                            email: 'apiteam@swagger.io',
+                        ),
+                        license: new License(
+                            name: 'MIT License',
+                            url: 'https://opensource.org/licenses/MIT'
+                        ),
+                    ),
+                ),
+            ],
+            'Client with license URL' => [
+                'namespace' => 'Client4',
+                'openAPI' => new OpenAPI(
+                    openapi: Version::make('3.1.0'),
+                    info: new Info(
+                        title: 'Pet Shop API',
+                        version: '1.0.0',
+                        license: new License(
+                            name: 'MIT License',
+                            url: 'https://opensource.org/licenses/MIT'
+                        ),
+                    ),
+                ),
+            ],
+            'Client with license identifier' => [
+                'namespace' => 'Client4',
+                'openAPI' => new OpenAPI(
+                    openapi: Version::make('3.1.0'),
+                    info: new Info(
+                        title: 'Pet Shop API',
+                        version: '1.0.0',
+                        license: new License(
+                            name: 'MIT License',
+                            identifier: 'MIT'
+                        ),
+                    ),
+                ),
+            ],
+            'Client with license name only' => [
+                'namespace' => 'Client5',
+                'openAPI' => new OpenAPI(
+                    openapi: Version::make('3.1.0'),
+                    info: new Info(
+                        title: 'Pet Shop API',
+                        version: '1.0.0',
+                        license: new License(
+                            name: 'MIT License',
+                        ),
                     ),
                 ),
             ],

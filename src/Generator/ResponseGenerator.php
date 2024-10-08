@@ -20,14 +20,13 @@ use Xenos\OpenApi\Model\Response;
 use function implode;
 use function ucfirst;
 
-readonly class ResponseGenerator extends AbstractGenerator
+readonly class ResponseGenerator
 {
-    private TypeHintGenerator $typeHintGenerator;
-
-    public function __construct(Config $config, Printer $printer)
-    {
-        parent::__construct($config, $printer);
-        $this->typeHintGenerator = new TypeHintGenerator($config, $printer);
+    public function __construct(
+        private Config $config,
+        private Printer $printer,
+        private TypeHintGenerator $typeHintGenerator,
+    ) {
     }
 
     public function generate(OpenAPI $openAPI): void
@@ -48,7 +47,7 @@ readonly class ResponseGenerator extends AbstractGenerator
             foreach ($path->getAllOperations() as $operation) {
                 foreach ($operation->responses as $statusCode => $response) {
                     if ($response instanceof Response) {
-                        $anonymousResponses[self::createResponseClassNameFromOperationAndStatusCode($operation, (string)$statusCode)] = $response;
+                        $anonymousResponses[self::createResponseClassNameFromOperationAndStatusCode($operation, $statusCode)] = $response;
                     }
                 }
             }

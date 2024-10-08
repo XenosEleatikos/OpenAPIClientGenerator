@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Xenos\OpenApiClientGenerator\Generator;
 
 use Nette\PhpGenerator\ClassType;
@@ -7,9 +9,17 @@ use Nette\PhpGenerator\EnumType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
 use Xenos\OpenApi\Model\OpenAPI;
+use Xenos\OpenApiClientGenerator\Generator\Config\Config;
+use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 
-readonly class ConfigGenerator extends AbstractGenerator
+readonly class ConfigGenerator
 {
+    public function __construct(
+        protected Config $config,
+        protected Printer $printer,
+    ) {
+    }
+
     public function generate(OpenAPI $openAPI): void
     {
         $namespace = new PhpNamespace($this->config->namespace . '\Config');

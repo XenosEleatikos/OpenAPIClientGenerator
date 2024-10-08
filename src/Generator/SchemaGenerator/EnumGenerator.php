@@ -10,17 +10,22 @@ use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
 use Xenos\OpenApi\Model\OpenAPI;
 use Xenos\OpenApi\Model\Schema;
-use Xenos\OpenApiClientGenerator\Generator\AbstractGenerator;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 
 use function ucfirst;
 
-readonly class EnumGenerator extends AbstractGenerator implements SchemaGeneratorInterface
+readonly class EnumGenerator implements SchemaGeneratorInterface
 {
-    public function __construct(Config $config, Printer $printer)
+    public function __construct(
+        private Config $config,
+        private Printer $printer
+    ) {
+    }
+
+    public function isResponsible(Schema $schema): bool
     {
-        parent::__construct($config, $printer);
+        return $schema->isEnumOfStrings() || $schema->isEnumOfIntegers();
     }
 
     public function generateSchema(string $name, Schema $schema, OpenAPI $openAPI): void
@@ -57,7 +62,7 @@ readonly class EnumGenerator extends AbstractGenerator implements SchemaGenerato
         $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Schema/' . ucfirst($name) . '.php', $file);
     }
 
-    public static function getFactoryCall(string $propertyClassName, string $propertyName): string
+    public function getFactoryCall(string $propertyClassName, string $propertyName): string
     {
         return $propertyClassName . '::from($data->' . $propertyName.')';
     }

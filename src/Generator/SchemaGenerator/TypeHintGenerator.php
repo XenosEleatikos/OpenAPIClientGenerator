@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Xenos\OpenApiClientGenerator\Generator\SchemaGenerator;
 
-use Xenos\OpenApiClientGenerator\Generator\AbstractGenerator;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
-use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 use Xenos\OpenApi\Model\Reference;
 use Xenos\OpenApi\Model\Schema;
 use Xenos\OpenApi\Model\SchemaType;
@@ -14,14 +12,12 @@ use Xenos\OpenApi\Model\OpenAPI;
 
 use function is_null;
 
-readonly class TypeHintGenerator extends AbstractGenerator
+readonly class TypeHintGenerator
 {
-    private SchemaClassNameGenerator $schemaClassNameGenerator;
-
-    public function __construct(Config $config, Printer $printer)
-    {
-        parent::__construct($config, $printer);
-        $this->schemaClassNameGenerator = new SchemaClassNameGenerator();
+    public function __construct(
+        private Config $config,
+        private SchemaClassNameGenerator $schemaClassNameGenerator
+    ) {
     }
 
     /** @return string[] */

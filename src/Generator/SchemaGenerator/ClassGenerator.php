@@ -1,33 +1,38 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Xenos\OpenApiClientGenerator\Generator\SchemaGenerator;
 
+use LogicException;
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
 use stdClass;
 use Xenos\OpenApi\Model\OpenAPI;
 use Xenos\OpenApi\Model\Schema;
-use Xenos\OpenApiClientGenerator\Generator\AbstractGenerator;
+use Xenos\OpenApi\Model\SchemaType;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 
 use function implode;
 use function ucfirst;
 
-readonly class ClassGenerator extends AbstractGenerator implements SchemaGeneratorInterface
+class ClassGenerator implements SchemaGeneratorInterface, ContainerAwareInterface
 {
-    private TypeHintGenerator $typeHintGenerator;
-    private SchemaClassNameGenerator $schemaClassNameGenerator;
-    private SchemaGeneratorContainer $schemaGeneratorContainer;
+    private ?SchemaGeneratorContainer $schemaGeneratorContainer = null;
 
-    public function __construct(Config $config, Printer $printer, SchemaGeneratorContainer $schemaGeneratorContainer)
+    public function __construct(
+        private Config $config,
+        private Printer $printer,
+        private TypeHintGenerator $typeHintGenerator,
+        private SchemaClassNameGenerator $schemaClassNameGenerator,
+    ) {
+    }
+
+    public function isResponsible(Schema $schema): bool
     {
-        $this->schemaGeneratorContainer = $schemaGeneratorContainer;
-
-        parent::__construct($config, $printer);
-        $this->typeHintGenerator = new TypeHintGenerator($config, $printer);
-        $this->schemaClassNameGenerator = new SchemaClassNameGenerator();
+        return $schema->type->contains(SchemaType::OBJECT);
     }
 
     public function generateSchema(string $name, Schema $schema, OpenAPI $openAPI): void
@@ -72,10 +77,10 @@ readonly class ClassGenerator extends AbstractGenerator implements SchemaGenerat
         foreach ($schema->properties as $propertyName => $propertySchemaOrReference) {
             list($propertyClassName, $propertySchema) = $this->schemaClassNameGenerator->createSchemaClassName($propertySchemaOrReference, $openAPI, $className, $propertyName);
 
-            $schemaGenerator = $this->schemaGeneratorContainer->getSchemaGenerator($propertySchema);
+            $schemaGenerator = $this->getContainer()->getSchemaGenerator($propertySchema);
             $factoryCall = $schemaGenerator === null
                 ? self::getPropertyCall($propertyName)
-                : $schemaGenerator::getFactoryCall($propertyClassName, $propertyName);
+                : $schemaGenerator->getFactoryCall($propertyClassName, $propertyName);
 
             $factory
                 ->addBody('    '.$propertyName.': ' . $factoryCall.',');
@@ -89,8 +94,19 @@ readonly class ClassGenerator extends AbstractGenerator implements SchemaGenerat
         return '$data->' . $propertyName;
     }
 
-    public static function getFactoryCall(string $propertyClassName, string $propertyName): string
+    public function getFactoryCall(string $propertyClassName, string $propertyName): string
     {
         return $propertyClassName . '::make($data->' . $propertyName.')';
+    }
+
+    public function setContainer(SchemaGeneratorContainer $schemaGeneratorContainer): void
+    {
+        $this->schemaGeneratorContainer = $schemaGeneratorContainer;
+    }
+
+    private function getContainer(): SchemaGeneratorContainer
+    {
+        return $this->schemaGeneratorContainer
+            ?? throw new LogicException('SchemaGeneratorContainer is not set.');
     }
 }

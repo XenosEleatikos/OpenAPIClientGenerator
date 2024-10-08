@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace Xenos\OpenApiClientGenerator\Command;
 
 use Nette\PhpGenerator\PsrPrinter;
+use Xenos\OpenApiClientGenerator\Generator\ClientGenerator\ClassCommentGenerator;
+use Xenos\OpenApiClientGenerator\Generator\ClientGenerator\ClientGenerator;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
+use Xenos\OpenApiClientGenerator\Generator\ConfigGenerator;
 use Xenos\OpenApiClientGenerator\Generator\Generator;
+use Xenos\OpenApiClientGenerator\Generator\GeneratorFactory;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 use RuntimeException;
 use stdClass;
@@ -16,6 +20,14 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Xenos\OpenApi\Model\OpenAPI;
+use Xenos\OpenApiClientGenerator\Generator\ResponseGenerator;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\ClassGenerator;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumClassGenerator;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumGenerator;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaClassNameGenerator;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaGenerator;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaGeneratorContainer;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\TypeHintGenerator;
 
 use function file_get_contents;
 use function is_string;
@@ -98,13 +110,13 @@ class GenerateCommand extends Command
             $absolutOutputPath = $outputPath;
         }
 
-        $clientGenerator = new Generator(
+        $clientGenerator = GeneratorFactory::make(
             new Config(
                 namespace: $rootNamespace,
                 directory: $absolutOutputPath
-            ),
-            new Printer(new PsrPrinter())
+            )
         );
+
         $clientGenerator->generate($specification);
 
         return 0;

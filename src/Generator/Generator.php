@@ -8,20 +8,21 @@ use Xenos\OpenApi\Model\OpenAPI;
 use Xenos\OpenApiClientGenerator\Generator\ClientGenerator\ClientGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaGenerator;
 
-readonly class Generator extends AbstractGenerator
+readonly class Generator
 {
+    public function __construct(
+        private SchemaGenerator $schemaGenerator,
+        private ResponseGenerator $responseGenerator,
+        private ClientGenerator $clientGenerator,
+        private ConfigGenerator $configGenerator,
+    ) {
+    }
+
     public function generate(OpenAPI $openAPI): void
     {
-        $schemaGenerator = new SchemaGenerator($this->config, $this->printer);
-        $schemaGenerator->generate($openAPI);
-
-        $responseGenerator = new ResponseGenerator($this->config, $this->printer);
-        $responseGenerator->generate($openAPI);
-
-        $clientGenerator = new ClientGenerator($this->config, $this->printer);
-        $clientGenerator->generate($openAPI);
-
-        $configGenerator = new ConfigGenerator($this->config, $this->printer);
-        $configGenerator->generate($openAPI);
+        $this->schemaGenerator->generate($openAPI);
+        $this->responseGenerator->generate($openAPI);
+        $this->clientGenerator->generate($openAPI);
+        $this->configGenerator->generate($openAPI);
     }
 }

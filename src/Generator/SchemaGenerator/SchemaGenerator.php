@@ -7,22 +7,15 @@ namespace Xenos\OpenApiClientGenerator\Generator\SchemaGenerator;
 use Xenos\OpenApi\Model\OpenAPI;
 use Xenos\OpenApi\Model\Schema;
 use Xenos\OpenApi\Model\Schemas;
-use Xenos\OpenApiClientGenerator\Generator\AbstractGenerator;
-use Xenos\OpenApiClientGenerator\Generator\Config\Config;
-use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 
 use function array_merge;
 
-readonly class SchemaGenerator extends AbstractGenerator
+readonly class SchemaGenerator
 {
-    private SchemaClassNameGenerator $schemaClassNameGenerator;
-    private SchemaGeneratorContainer $schemaGeneratorContainer;
-
-    public function __construct(Config $config, Printer $printer)
-    {
-        parent::__construct($config, $printer);
-        $this->schemaGeneratorContainer = new SchemaGeneratorContainer($config, $printer);
-        $this->schemaClassNameGenerator = new SchemaClassNameGenerator();
+    public function __construct(
+        private SchemaClassNameGenerator $schemaClassNameGenerator,
+        private SchemaGeneratorContainer $schemaGeneratorContainer,
+    ) {
     }
 
     public function generate(OpenAPI $openAPI): void

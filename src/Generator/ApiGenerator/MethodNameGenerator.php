@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Xenos\OpenApiClientGenerator\Generator\ApiGenerator;
 
 use Xenos\OpenApi\Model\Operation;

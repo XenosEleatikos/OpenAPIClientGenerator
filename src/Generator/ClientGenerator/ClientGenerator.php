@@ -10,23 +10,20 @@ use Nette\PhpGenerator\PhpNamespace;
 use Psr\Http\Client\ClientInterface;
 use Xenos\OpenApi\Model\OpenAPI;
 use Xenos\OpenApi\Model\Tag;
-use Xenos\OpenApiClientGenerator\Generator\AbstractGenerator;
-use Xenos\OpenApiClientGenerator\Generator\ApiGenerator;
+use Xenos\OpenApiClientGenerator\Generator\ApiGenerator\ApiGenerator;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 
 use function array_merge;
 
-readonly class ClientGenerator extends AbstractGenerator
+readonly class ClientGenerator
 {
-    private ClassCommentGenerator $classCommentGenerator;
-
     public function __construct(
-        Config $config,
-        Printer $printer,
+        private Config $config,
+        private Printer $printer,
+        private ClassCommentGenerator $classCommentGenerator,
+        private ApiGenerator $apiGenerator,
     ) {
-        parent::__construct($config, $printer);
-        $this->classCommentGenerator = new ClassCommentGenerator();
     }
 
     public function generate(OpenAPI $openAPI): void
@@ -38,8 +35,6 @@ readonly class ClientGenerator extends AbstractGenerator
 
         $namespace->add($class);
 
-        $apiGenerator = new ApiGenerator($this->config, $this->printer);
-
         /** @var (Tag|string)[] $tags */
         $tags = array_merge(
             (array)$openAPI->tags,
@@ -47,8 +42,7 @@ readonly class ClientGenerator extends AbstractGenerator
         );
         foreach ($tags as $tag) {
             $tagName = $tag instanceof Tag ? $tag->name : $tag;
-            $comment = $tag instanceof Tag ? $tag->description : null;
-            $apiGenerator->generate($openAPI, $tag, $comment);
+            $this->apiGenerator->generate($openAPI, $tag);
 
             $classname = 'Api\\' . ApiGenerator::getClassName($tagName);
 

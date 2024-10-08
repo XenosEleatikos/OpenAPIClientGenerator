@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Xenos\OpenApiClientGeneratorTest\Generator;
+namespace Xenos\OpenApiClientGeneratorTest\Generator\ClientGenerator;
 
 use Nette\PhpGenerator\PsrPrinter;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -18,6 +18,10 @@ use Xenos\OpenApi\Model\Paths;
 use Xenos\OpenApi\Model\Tag;
 use Xenos\OpenApi\Model\Tags;
 use Xenos\OpenApi\Model\Version;
+use Xenos\OpenApiClientGenerator\Generator\ApiGenerator\ApiGenerator;
+use Xenos\OpenApiClientGenerator\Generator\ApiGenerator\MethodCommentGenerator;
+use Xenos\OpenApiClientGenerator\Generator\ApiGenerator\MethodNameGenerator;
+use Xenos\OpenApiClientGenerator\Generator\ClientGenerator\ClassCommentGenerator;
 use Xenos\OpenApiClientGenerator\Generator\ClientGenerator\ClientGenerator;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
@@ -41,9 +45,20 @@ class ClientGeneratorTest extends TestCase
         string $namespace,
         OpenAPI $openAPI,
     ): void {
+        $config = new Config(namespace: 'Xenos\OpenApiClientGeneratorFixture\\' . $namespace, directory: $this->tmpDir);
+        $printer = new Printer(new PsrPrinter());
+
         $this->clientGenerator = new ClientGenerator(
-            config: new Config(namespace: 'Xenos\OpenApiClientGeneratorFixture\\' . $namespace, directory: $this->tmpDir),
-            printer: new Printer(new PsrPrinter())
+            config: $config,
+            printer: $printer,
+            classCommentGenerator: new ClassCommentGenerator(),
+            apiGenerator: new ApiGenerator(
+                config: $config,
+                printer: $printer,
+                methodNameGenerator: new MethodNameGenerator(),
+                classCommentGenerator: new \Xenos\OpenApiClientGenerator\Generator\ApiGenerator\ClassCommentGenerator(),
+                methodCommentGenerator: new MethodCommentGenerator()
+            )
         );
 
         $this->clientGenerator->generate($openAPI);
@@ -52,7 +67,7 @@ class ClientGeneratorTest extends TestCase
 
         self::assertFileExists($this->tmpDir . '/src/' . $file);
         self::assertFileEquals(
-            __DIR__ . '/../../../fixtures/' . $namespace . '/' . $file,
+            __DIR__ . '/../../../../fixtures/' . $namespace . '/' . $file,
             $this->tmpDir . '/src/' . $file
         );
     }

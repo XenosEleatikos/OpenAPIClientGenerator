@@ -23,21 +23,12 @@ use Xenos\OpenApiClientGenerator\Generator\ApiGenerator\MethodCommentGenerator;
 use Xenos\OpenApiClientGenerator\Generator\ApiGenerator\MethodNameGenerator;
 use Xenos\OpenApiClientGenerator\Generator\ClientGenerator\ClassCommentGenerator;
 use Xenos\OpenApiClientGenerator\Generator\ClientGenerator\ClientGenerator;
-use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
-
-use function sys_get_temp_dir;
-use function time;
+use Xenos\OpenApiClientGeneratorTestHelper\TmpDir;
 
 class ClientGeneratorTest extends TestCase
 {
     private ClientGenerator $clientGenerator;
-    private string $tmpDir;
-
-    protected function setUp(): void
-    {
-        $this->tmpDir = sys_get_temp_dir() . '/openApiClient/' . time();
-    }
 
     #[DataProvider('provideDataToTestApiFactories')]
     #[DataProvider('provideDataToTestClassComment')]
@@ -45,7 +36,8 @@ class ClientGeneratorTest extends TestCase
         string $namespace,
         OpenAPI $openAPI,
     ): void {
-        $config = new Config(namespace: 'Xenos\OpenApiClientGeneratorFixture\\' . $namespace, directory: $this->tmpDir);
+        $tmpDir = new TmpDir($namespace);
+        $config = $tmpDir->makeConfig();
         $printer = new Printer(new PsrPrinter());
 
         $this->clientGenerator = new ClientGenerator(
@@ -65,10 +57,10 @@ class ClientGeneratorTest extends TestCase
 
         $file = 'Client.php';
 
-        self::assertFileExists($this->tmpDir . '/src/' . $file);
-        self::assertFileEquals(
-            __DIR__ . '/../../../../fixtures/' . $namespace . '/' . $file,
-            $this->tmpDir . '/src/' . $file
+        self::assertFileExists($tmpDir . '/src/' . $file);
+        self::assertSame(
+            $tmpDir->getFixtureFile($file),
+            $tmpDir->getGeneratedFile($file)
         );
     }
 
@@ -76,21 +68,28 @@ class ClientGeneratorTest extends TestCase
     {
         return [
             'APIs from declared tags' => [
-                'namespace' => 'Client1',
+                'namespace' => 'ClientGeneratorTest\Client1',
                 'openAPI' => new OpenAPI(
                     openapi: Version::make('3.1.0'),
                     info: new Info('Pet Shop API', '1.0.0'),
+                    paths: new Paths(
+                        [
+                            '/pet' => new PathItem(get: new Operation(tags: ['pet'])),
+                            '/store' => new PathItem(get: new Operation(tags: ['store'])),
+                            '/user' => new PathItem(get: new Operation(tags: ['user'])),
+                        ]
+                    ),
                     tags: new Tags(
                         [
                             new Tag(name: 'pet'),
                             new Tag(name: 'store'),
                             new Tag(name: 'user'),
                         ]
-                    )
+                    ),
                 ),
             ],
-            'APIs from not declared tags' => [
-                'namespace' => 'Client1',
+            'APIs from undeclared tags' => [
+                'namespace' => 'ClientGeneratorTest\Client1',
                 'openAPI' => new OpenAPI(
                     openapi: Version::make('3.1.0'),
                     info: new Info('Pet Shop API', '1.0.0'),
@@ -103,8 +102,8 @@ class ClientGeneratorTest extends TestCase
                     ),
                 ),
             ],
-            'APIs from not declared tags with double occurrences' => [
-                'namespace' => 'Client1',
+            'APIs from undeclared tags with double occurrences' => [
+                'namespace' => 'ClientGeneratorTest\Client1',
                 'openAPI' => new OpenAPI(
                     openapi: Version::make('3.1.0'),
                     info: new Info('Pet Shop API', '1.0.0'),
@@ -126,8 +125,8 @@ class ClientGeneratorTest extends TestCase
                     ),
                 ),
             ],
-            'APIs from several not declared tags in same path item' => [
-                'namespace' => 'Client1',
+            'APIs from several undeclared tags in same path item' => [
+                'namespace' => 'ClientGeneratorTest\Client1',
                 'openAPI' => new OpenAPI(
                     openapi: Version::make('3.1.0'),
                     info: new Info('Pet Shop API', '1.0.0'),
@@ -142,29 +141,8 @@ class ClientGeneratorTest extends TestCase
                     ),
                 ),
             ],
-            'APIs from declared tags which are used in operations' => [
-                'namespace' => 'Client1',
-                'openAPI' => new OpenAPI(
-                    openapi: Version::make('3.1.0'),
-                    info: new Info('Pet Shop API', '1.0.0'),
-                    paths: new Paths(
-                        [
-                            '/pet' => new PathItem(get: new Operation(tags: ['pet'])),
-                            '/store' => new PathItem(get: new Operation(tags: ['store'])),
-                            '/user' => new PathItem(get: new Operation(tags: ['user'])),
-                        ]
-                    ),
-                    tags: new Tags(
-                        [
-                            new Tag(name: 'pet'),
-                            new Tag(name: 'store'),
-                            new Tag(name: 'user'),
-                        ]
-                    ),
-                ),
-            ],
             'Several declared tags which are used in the same operation' => [
-                'namespace' => 'Client1',
+                'namespace' => 'ClientGeneratorTest\Client1',
                 'openAPI' => new OpenAPI(
                     openapi: Version::make('3.1.0'),
                     info: new Info('Pet Shop API', '1.0.0'),
@@ -182,8 +160,8 @@ class ClientGeneratorTest extends TestCase
                     ),
                 ),
             ],
-            'Several not declared tags which are used in the same operation' => [
-                'namespace' => 'Client1',
+            'Several undeclared tags which are used in the same operation' => [
+                'namespace' => 'ClientGeneratorTest\Client1',
                 'openAPI' => new OpenAPI(
                     openapi: Version::make('3.1.0'),
                     info: new Info('Pet Shop API', '1.0.0'),
@@ -195,7 +173,7 @@ class ClientGeneratorTest extends TestCase
                 ),
             ],
             'APIs from declared tags which are used in different order' => [
-                'namespace' => 'Client1',
+                'namespace' => 'ClientGeneratorTest\Client1',
                 'openAPI' => new OpenAPI(
                     openapi: Version::make('3.1.0'),
                     info: new Info('Pet Shop API', '1.0.0'),
@@ -215,8 +193,8 @@ class ClientGeneratorTest extends TestCase
                     ),
                 ),
             ],
-            'APIs from declared and not declared tags' => [
-                'namespace' => 'Client1',
+            'APIs from declared tags, where not all are used' => [
+                'namespace' => 'ClientGeneratorTest\Client7',
                 'openAPI' => new OpenAPI(
                     openapi: Version::make('3.1.0'),
                     info: new Info('Pet Shop API', '1.0.0'),
@@ -229,6 +207,8 @@ class ClientGeneratorTest extends TestCase
                     tags: new Tags(
                         [
                             new Tag(name: 'pet'),
+                            new Tag(name: 'store'),
+                            new Tag(name: 'user'),
                         ]
                     ),
                 ),
@@ -240,14 +220,14 @@ class ClientGeneratorTest extends TestCase
     {
         return [
             'Empty client' => [
-                'namespace' => 'Client2',
+                'namespace' => 'ClientGeneratorTest\Client2',
                 'openAPI' => new OpenAPI(
                     openapi: Version::make('3.1.0'),
                     info: new Info('Pet Shop API', '1.0.0'),
                 ),
             ],
             'Client with full information in doc comment' => [
-                'namespace' => 'Client3',
+                'namespace' => 'ClientGeneratorTest\Client3',
                 'openAPI' => new OpenAPI(
                     openapi: Version::make('3.1.0'),
                     info: new Info(
@@ -275,7 +255,7 @@ class ClientGeneratorTest extends TestCase
                 ),
             ],
             'Client with license URL' => [
-                'namespace' => 'Client4',
+                'namespace' => 'ClientGeneratorTest\Client4',
                 'openAPI' => new OpenAPI(
                     openapi: Version::make('3.1.0'),
                     info: new Info(
@@ -289,7 +269,7 @@ class ClientGeneratorTest extends TestCase
                 ),
             ],
             'Client with license identifier' => [
-                'namespace' => 'Client4',
+                'namespace' => 'ClientGeneratorTest\Client4',
                 'openAPI' => new OpenAPI(
                     openapi: Version::make('3.1.0'),
                     info: new Info(
@@ -303,7 +283,7 @@ class ClientGeneratorTest extends TestCase
                 ),
             ],
             'Client with license name only' => [
-                'namespace' => 'Client5',
+                'namespace' => 'ClientGeneratorTest\Client5',
                 'openAPI' => new OpenAPI(
                     openapi: Version::make('3.1.0'),
                     info: new Info(

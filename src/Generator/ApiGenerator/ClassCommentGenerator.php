@@ -16,7 +16,11 @@ class ClassCommentGenerator
         $comments[] = '# ' . ($tag instanceof Tag ? $tag->name : $tag);
         $comments[] = $tag instanceof Tag ? $tag->description : null;
         if ($tag instanceof Tag && isset($tag->externalDocs)) {
-            $comments[] = '@link ' . $tag->externalDocs->url;
+            $link = '@link ' . $tag->externalDocs->url;
+            if (!empty($tag->externalDocs->description)) {
+                $link .= ' ' . $tag->externalDocs->description;
+            }
+            $comments[] = $link;
         }
 
         return implode(PHP_EOL . PHP_EOL, array_filter($comments));

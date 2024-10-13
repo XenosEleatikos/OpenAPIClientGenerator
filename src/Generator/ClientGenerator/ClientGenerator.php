@@ -35,14 +35,8 @@ readonly class ClientGenerator
 
         $namespace->add($class);
 
-        /** @var (Tag|string)[] $tags */
-        $tags = array_merge(
-            (array)$openAPI->tags,
-            $openAPI->findUndeclaredTags()
-        );
-        foreach ($tags as $tag) {
-            $tagName = $tag instanceof Tag ? $tag->name : $tag;
-            $this->apiGenerator->generate($openAPI, $tag);
+        foreach ($openAPI->findUsedTags() as $tagName) {
+            $this->apiGenerator->generate($openAPI, $tagName);
 
             $classname = 'Api\\' . ApiGenerator::getClassName($tagName);
 

@@ -12,19 +12,17 @@ use Xenos\OpenApi\Model\Schema;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumGenerator;
-
-use function sys_get_temp_dir;
-use function time;
+use Xenos\OpenApiClientGeneratorTestHelper\TmpDir;
 
 class EnumGeneratorTest extends TestCase
 {
     private EnumGenerator $enumClassGenerator;
-    private string $tmpDir;
+    private TmpDir $tmpDir;
 
     protected function setUp(): void
     {
-        $this->tmpDir = sys_get_temp_dir() . '/openApiClient/' . time();
-        $config = new Config(namespace: 'Xenos\OpenApiClientGeneratorFixture\Client1', directory: $this->tmpDir);
+        $this->tmpDir = new TmpDir('EnumGeneratorTest');
+        $config = $this->tmpDir->makeConfig();
 
         $this->enumClassGenerator = new EnumGenerator(
             $config,
@@ -41,9 +39,9 @@ class EnumGeneratorTest extends TestCase
         $this->enumClassGenerator->generateSchema($schemaName, $schema, $this->createStub(OpenAPI::class));
 
         self::assertFileExists($this->tmpDir . '/src/' . $file);
-        self::assertFileEquals(
-            __DIR__ . '/../../../../fixtures/Client1/' . $file,
-            $this->tmpDir . '/src/' . $file
+        self::assertSame(
+            $this->tmpDir->getFixtureFile($file),
+            $this->tmpDir->getGeneratedFile($file)
         );
     }
 

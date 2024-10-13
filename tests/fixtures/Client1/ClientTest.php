@@ -6,12 +6,12 @@ namespace Xenos\OpenApiClientGeneratorFixtureTest\Client1;
 
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
-use Xenos\OpenApiClientGeneratorFixture\Client1\Api\PetApi;
-use Xenos\OpenApiClientGeneratorFixture\Client1\Api\StoreApi;
-use Xenos\OpenApiClientGeneratorFixture\Client1\Api\UserApi;
-use Xenos\OpenApiClientGeneratorFixture\Client1\Client;
-use Xenos\OpenApiClientGeneratorFixture\Client1\Config\Config;
-use Xenos\OpenApiClientGeneratorFixture\Client1\Config\Server;
+use Xenos\OpenApiClientGeneratorFixture\ClientGeneratorTest\Client1\Api\PetApi;
+use Xenos\OpenApiClientGeneratorFixture\ClientGeneratorTest\Client1\Api\StoreApi;
+use Xenos\OpenApiClientGeneratorFixture\ClientGeneratorTest\Client1\Api\UserApi;
+use Xenos\OpenApiClientGeneratorFixture\ClientGeneratorTest\Client1\Client;
+use Xenos\OpenApiClientGeneratorFixture\ClientGeneratorTest\Client1\Config\Config;
+use Xenos\OpenApiClientGeneratorFixture\ClientGeneratorTest\Client1\Config\Server;
 
 class ClientTest extends TestCase
 {

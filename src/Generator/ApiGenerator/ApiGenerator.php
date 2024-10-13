@@ -13,14 +13,12 @@ use Xenos\OpenApi\Model\Operation;
 use Xenos\OpenApi\Model\ParameterLocation;
 use Xenos\OpenApi\Model\Paths;
 use Xenos\OpenApi\Model\Reference;
-use Xenos\OpenApi\Model\Tag;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 use Xenos\OpenApiClientGenerator\Generator\ResponseGenerator;
 
 use function array_unique;
 use function implode;
-use function in_array;
 use function str_replace;
 use function ucfirst;
 
@@ -35,14 +33,13 @@ readonly class ApiGenerator
     ) {
     }
 
-    public function generate(OpenAPI $openAPI, string|Tag $tag): void
+    public function generate(OpenAPI $openAPI, string $tag): void
     {
         $namespace = new PhpNamespace($this->config->namespace . '\Api');
-        $tagName = $tag instanceof Tag ? $tag->name : $tag;
 
-        $class = new ClassType($this->getClassName($tagName));
+        $class = new ClassType($this->getClassName($tag));
         $this->addConstructor($class);
-        $class->setComment($this->classCommentGenerator->generateClassComment($tag));
+        $class->setComment($this->classCommentGenerator->generateClassComment($openAPI->tags[$tag] ?? $tag));
 
         $namespace->add($class);
 
@@ -50,47 +47,47 @@ readonly class ApiGenerator
         $file->setStrictTypes();
         $file->addNamespace($namespace);
 
-        foreach (self::getAllOperations($openAPI->paths, $tagName) as $operation) {
+        foreach (self::getAllOperations($openAPI->paths, $tag) as $operation) {
             $this->addMethodToApi($class, $openAPI, ...$operation);
         }
 
-        $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Api/' . ucfirst($tagName) . 'Api.php', $file);
+        $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Api/' . self::getClassName($tag) . '.php', $file);
     }
 
     /** @return array<int, array{0: string, 1: string, 2: Operation}> */
-    private static function getAllOperations(Paths $paths, string $tagName): array
+    private static function getAllOperations(Paths $paths, string $tag): array
     {
         foreach ($paths as $path => $pathItem) {
-            if (in_array($tagName, $pathItem->get?->tags ?? [])) {
+            if ($pathItem->get?->hasTag($tag)) {
                 $operations[] = ['GET', $path, $pathItem->get];
             }
-            if (in_array($tagName, $pathItem->put?->tags ?? [])) {
+            if ($pathItem->put?->hasTag($tag)) {
                 $operations[] = ['PUT', $path, $pathItem->put];
             }
-            if (in_array($tagName, $pathItem->post?->tags ?? [])) {
+            if ($pathItem->post?->hasTag($tag)) {
                 $operations[] = ['POST', $path, $pathItem->post];
             }
-            if (in_array($tagName, $pathItem->delete?->tags ?? [])) {
+            if ($pathItem->delete?->hasTag($tag)) {
                 $operations[] = ['DELETE', $path, $pathItem->delete];
             }
-            if (in_array($tagName, $pathItem->options?->tags ?? [])) {
+            if ($pathItem->options?->hasTag($tag)) {
                 $operations[] = ['OPTIONS', $path, $pathItem->options];
             }
-            if (in_array($tagName, $pathItem->head?->tags ?? [])) {
+            if ($pathItem->head?->hasTag($tag)) {
                 $operations[] = ['HEAD', $path, $pathItem->head];
             }
-            if (in_array($tagName, $pathItem->patch?->tags ?? [])) {
+            if ($pathItem->patch?->hasTag($tag)) {
                 $operations[] = ['PATCH', $path, $pathItem->patch];
             }
-            if (in_array($tagName, $pathItem->trace?->tags ?? [])) {
+            if ($pathItem->trace?->hasTag($tag)) {
                 $operations[] = ['TRACE', $path, $pathItem->trace];
             }
         }
 
-        return $operations ?? []; // @phpstan-ignore-line
+        return $operations ?? [];
     }
 
-    public function addConstructor(ClassType $class): void
+    private function addConstructor(ClassType $class): void
     {
         $constructor = $class->addMethod('__construct');
         $constructor->addPromotedParameter('httpClient')
@@ -99,7 +96,7 @@ readonly class ApiGenerator
             ->setType($this->config->namespace . '\Config\Config');
     }
 
-    public function addMethodToApi(
+    private function addMethodToApi(
         ClassType $class,
         OpenAPI $openAPI,
         string $method,
@@ -132,7 +129,7 @@ readonly class ApiGenerator
 
         $returnTypes = implode('|', array_unique($returnTypes));
 
-        $apiMethod->setReturnType($returnTypes);
+        $apiMethod->setReturnType($returnTypes ?: 'void');
 
         $path = empty($pathParameters)
             ? '\'' . $path . '\'' // We use single quotes for strings without variables
@@ -144,7 +141,8 @@ readonly class ApiGenerator
                 ->setType('string');
         }
 
-        $apiCall = '$result = $this->httpClient->sendRequest(' . PHP_EOL
+        $apiCall = !empty($returnCodeSnippets) ? '$result = ' : '';
+        $apiCall .= '$this->httpClient->sendRequest(' . PHP_EOL
             . '    new  \GuzzleHttp\Psr7\Request(' . PHP_EOL
             . '        method: \'' . $method . '\',' . PHP_EOL
             . '        uri: ' . $path . PHP_EOL
@@ -153,12 +151,15 @@ readonly class ApiGenerator
 
         $apiMethod
             ->addBody($apiCall);
-        $apiMethod->addBody('');
-        $apiMethod->addBody('return match ($result->getStatusCode()) {');
-        foreach ($returnCodeSnippets as $codeSnippet) {
-            $apiMethod->addBody($codeSnippet);
+
+        if (!empty($returnCodeSnippets)) {
+            $apiMethod->addBody('');
+            $apiMethod->addBody('return match ($result->getStatusCode()) {');
+            foreach ($returnCodeSnippets as $codeSnippet) {
+                $apiMethod->addBody($codeSnippet);
+            }
+            $apiMethod->addBody('};');
         }
-        $apiMethod->addBody('};');
 
         $apiMethod->setComment($this->methodCommentGenerator->generateMethodComment($operation));
     }

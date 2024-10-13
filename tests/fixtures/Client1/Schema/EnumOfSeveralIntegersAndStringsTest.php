@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use ValueError;
-use Xenos\OpenApiClientGeneratorFixture\Client1\Schema\EnumOfSeveralIntegersAndStrings;
+use Xenos\OpenApiClientGeneratorFixture\ClientGeneratorTest\Client1\Schema\EnumOfSeveralIntegersAndStrings;
 
 class EnumOfSeveralIntegersAndStringsTest extends TestCase
 {
@@ -49,7 +49,7 @@ class EnumOfSeveralIntegersAndStringsTest extends TestCase
     public function testFromThrowsException(): void
     {
         $this->expectException(ValueError::class);
-        $this->expectExceptionMessage('3 is not a valid backing value for enum Xenos\OpenApiClientGeneratorFixture\Client1\Schema\EnumOfSeveralIntegersAndStrings');
+        $this->expectExceptionMessage('3 is not a valid backing value for enum Xenos\OpenApiClientGeneratorFixture\ClientGeneratorTest\Client1\Schema\EnumOfSeveralIntegersAndStrings');
 
         EnumOfSeveralIntegersAndStrings::from(3);
     }

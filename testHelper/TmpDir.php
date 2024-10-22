@@ -53,7 +53,6 @@ class TmpDir
     public function reflectGeneratedClass(string $class): ReflectionClass
     {
         require_once realpath($this->path . self::getPath($class));
-
         return new ReflectionClass($this->getTemporaryModifiedNamespace() . '\\' . $class);
     }
 

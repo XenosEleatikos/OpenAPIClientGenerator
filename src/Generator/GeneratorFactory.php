@@ -12,6 +12,8 @@ use Xenos\OpenApiClientGenerator\Generator\ClientGenerator\ClassCommentGenerator
 use Xenos\OpenApiClientGenerator\Generator\ClientGenerator\ClientGenerator;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
+use Xenos\OpenApiClientGenerator\Generator\ResponseGenerator\ResponseClassNameGenerator;
+use Xenos\OpenApiClientGenerator\Generator\ResponseGenerator\ResponseGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\ClassGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumClassGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumGenerator;
@@ -30,6 +32,7 @@ class GeneratorFactory
             config: $config,
             schemaClassNameGenerator: $schemaClassNameGenerator
         );
+        $classNameGenerator = new ResponseClassNameGenerator($config);
 
         return new Generator(
             schemaGenerator: new SchemaGenerator(
@@ -50,6 +53,7 @@ class GeneratorFactory
                 config: $config,
                 printer: $printer,
                 typeHintGenerator: $typeHintGenerator,
+                responseClassNameGenerator: $classNameGenerator,
             ),
             clientGenerator: new ClientGenerator(
                 config: $config,
@@ -60,7 +64,8 @@ class GeneratorFactory
                     printer: $printer,
                     methodNameGenerator: new MethodNameGenerator(),
                     classCommentGenerator: new \Xenos\OpenApiClientGenerator\Generator\ApiGenerator\ClassCommentGenerator(),
-                    methodCommentGenerator: new MethodCommentGenerator()
+                    methodCommentGenerator: new MethodCommentGenerator(),
+                    classNameGenerator: $classNameGenerator,
                 )
             ),
             configGenerator: new ConfigGenerator($config, $printer),

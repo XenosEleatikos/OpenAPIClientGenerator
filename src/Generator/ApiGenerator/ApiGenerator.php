@@ -15,7 +15,8 @@ use Xenos\OpenApi\Model\Paths;
 use Xenos\OpenApi\Model\Reference;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
-use Xenos\OpenApiClientGenerator\Generator\ResponseGenerator;
+use Xenos\OpenApiClientGenerator\Generator\ResponseGenerator\ResponseClassNameGenerator;
+use Xenos\OpenApiClientGenerator\Generator\ResponseGenerator\ResponseGenerator;
 
 use function array_unique;
 use function implode;
@@ -25,11 +26,12 @@ use function ucfirst;
 readonly class ApiGenerator
 {
     public function __construct(
-        private Config $config,
-        private Printer $printer,
-        private MethodNameGenerator $methodNameGenerator,
-        private ClassCommentGenerator $classCommentGenerator,
-        private MethodCommentGenerator $methodCommentGenerator,
+        private Config                     $config,
+        private Printer                    $printer,
+        private MethodNameGenerator        $methodNameGenerator,
+        private ClassCommentGenerator      $classCommentGenerator,
+        private MethodCommentGenerator     $methodCommentGenerator,
+        private ResponseClassNameGenerator $classNameGenerator,
     ) {
     }
 
@@ -51,7 +53,7 @@ readonly class ApiGenerator
             $this->addMethodToApi($class, $openAPI, ...$operation);
         }
 
-        $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Api/' . self::getClassName($tag) . '.php', $file);
+        $this->printer->printFile($this->getApiPath() . DIRECTORY_SEPARATOR . self::getClassName($tag) . '.php', $file);
     }
 
     /** @return array<int, array{0: string, 1: string, 2: Operation}> */
@@ -103,8 +105,6 @@ readonly class ApiGenerator
         string $path,
         Operation $operation
     ): void {
-        $pathParameters = $operation->parameters->getParametersByLocation(ParameterLocation::PATH);
-
         $apiMethod = $class->addMethod($this->methodNameGenerator->generateMethodName($method, $path, $operation));
 
         $returnTypes = [];
@@ -112,10 +112,10 @@ readonly class ApiGenerator
         foreach ($operation->responses as $statusCode => $response) {
             $statusCode = (string)$statusCode;
             if ($response instanceof Reference) {
-                $returnTypes[$statusCode] = $this->config->namespace . '\Response\\' . ResponseGenerator::createResponseClassNameFromReferencePath($response->ref);
+                $returnTypes[$statusCode] = $this->classNameGenerator->createResponseClassNameFromReferencePath($response->ref);
                 $response = $openAPI->resolveReference($response);
             } else {
-                $returnTypes[$statusCode] = $this->config->namespace . '\Response\\' . ResponseGenerator::createResponseClassNameFromOperationAndStatusCode($operation, $statusCode);
+                $returnTypes[$statusCode] = $this->classNameGenerator->createResponseClassName($method, $path, $operation, $statusCode);
             }
 
             /** @var null|MediaType $jsonMediaType */
@@ -131,6 +131,7 @@ readonly class ApiGenerator
 
         $apiMethod->setReturnType($returnTypes ?: 'void');
 
+        $pathParameters = $operation->parameters->getParametersByLocation(ParameterLocation::PATH);
         $path = empty($pathParameters)
             ? '\'' . $path . '\'' // We use single quotes for strings without variables
             : '"' . $path . '"'; // We need double quotes, if the path contains variables
@@ -142,12 +143,7 @@ readonly class ApiGenerator
         }
 
         $apiCall = !empty($returnCodeSnippets) ? '$result = ' : '';
-        $apiCall .= '$this->httpClient->sendRequest(' . PHP_EOL
-            . '    new  \GuzzleHttp\Psr7\Request(' . PHP_EOL
-            . '        method: \'' . $method . '\',' . PHP_EOL
-            . '        uri: ' . $path . PHP_EOL
-            . '    )' . PHP_EOL
-            . ');';
+        $apiCall .= $this->createApiCall($method, $path);
 
         $apiMethod
             ->addBody($apiCall);
@@ -172,5 +168,20 @@ readonly class ApiGenerator
     public static function getClassName(string $tagName): string
     {
         return ucfirst($tagName) . 'Api';
+    }
+
+    private function getApiPath(): string
+    {
+        return $this->config->directory . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Api';
+    }
+
+    public function createApiCall(string $method, string $path): string
+    {
+        return '$this->httpClient->sendRequest(' . PHP_EOL
+            . '    new  \GuzzleHttp\Psr7\Request(' . PHP_EOL
+            . '        method: \'' . $method . '\',' . PHP_EOL
+            . '        uri: ' . $path . PHP_EOL
+            . '    )' . PHP_EOL
+            . ');';
     }
 }

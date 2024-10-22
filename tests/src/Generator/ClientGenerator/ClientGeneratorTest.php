@@ -24,6 +24,7 @@ use Xenos\OpenApiClientGenerator\Generator\ApiGenerator\MethodNameGenerator;
 use Xenos\OpenApiClientGenerator\Generator\ClientGenerator\ClassCommentGenerator;
 use Xenos\OpenApiClientGenerator\Generator\ClientGenerator\ClientGenerator;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
+use Xenos\OpenApiClientGenerator\Generator\ResponseGenerator\ResponseClassNameGenerator;
 use Xenos\OpenApiClientGeneratorTestHelper\TmpDir;
 
 class ClientGeneratorTest extends TestCase
@@ -49,7 +50,8 @@ class ClientGeneratorTest extends TestCase
                 printer: $printer,
                 methodNameGenerator: new MethodNameGenerator(),
                 classCommentGenerator: new \Xenos\OpenApiClientGenerator\Generator\ApiGenerator\ClassCommentGenerator(),
-                methodCommentGenerator: new MethodCommentGenerator()
+                methodCommentGenerator: new MethodCommentGenerator(),
+                classNameGenerator: new ResponseClassNameGenerator($config),
             )
         );
 

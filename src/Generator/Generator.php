@@ -6,6 +6,7 @@ namespace Xenos\OpenApiClientGenerator\Generator;
 
 use Xenos\OpenApi\Model\OpenAPI;
 use Xenos\OpenApiClientGenerator\Generator\ClientGenerator\ClientGenerator;
+use Xenos\OpenApiClientGenerator\Generator\ResponseGenerator\ResponseGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaGenerator;
 
 readonly class Generator

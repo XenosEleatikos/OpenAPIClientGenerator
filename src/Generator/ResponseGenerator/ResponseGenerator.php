@@ -1,21 +1,22 @@
 <?php
 
-namespace Xenos\OpenApiClientGenerator\Generator;
+namespace Xenos\OpenApiClientGenerator\Generator\ResponseGenerator;
 
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
-use Xenos\OpenApiClientGenerator\Generator\Config\Config;
-use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
-use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\TypeHintGenerator;
 use stdClass;
-use Xenos\OpenApi\Model\Reference;
-use Xenos\OpenApi\Model\Schema;
-use Xenos\OpenApi\Model\SchemaType;
 use Xenos\OpenApi\Model\MediaType;
 use Xenos\OpenApi\Model\OpenAPI;
 use Xenos\OpenApi\Model\Operation;
+use Xenos\OpenApi\Model\Reference;
 use Xenos\OpenApi\Model\Response;
+use Xenos\OpenApi\Model\Schema;
+use Xenos\OpenApi\Model\SchemaType;
+use Xenos\OpenApiClientGenerator\Generator\Config\Config;
+use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\TypeHintGenerator;
+use Xenos\OpenApiClientGenerator\Model\FullyQualifiedClassName;
 
 use function implode;
 use function ucfirst;
@@ -23,31 +24,33 @@ use function ucfirst;
 readonly class ResponseGenerator
 {
     public function __construct(
-        private Config $config,
-        private Printer $printer,
-        private TypeHintGenerator $typeHintGenerator,
+        private Config                     $config,
+        private Printer                    $printer,
+        private TypeHintGenerator          $typeHintGenerator,
+        private ResponseClassNameGenerator $responseClassNameGenerator,
     ) {
     }
 
     public function generate(OpenAPI $openAPI): void
     {
         foreach ($openAPI->components->responses as $name => $response) {
-            $this->generateResponse($name, $response, $openAPI);
+            $fqcn = $this->responseClassNameGenerator->createResponseClassNameFromComponentsKey($name);
+            $this->generateResponse($fqcn, $response, $openAPI);
         }
 
-        foreach ($this->findAnonymousResponses($openAPI) as $name => $response) {
-            $this->generateResponse($name, $response, $openAPI);
+        foreach ($this->findAnonymousResponses($openAPI) as $fqcn => $response) {
+            $this->generateResponse(new FullyQualifiedClassName($fqcn), $response, $openAPI);
         }
     }
 
     /** @return array<string, Response> */
     private function findAnonymousResponses(OpenAPI $openAPI): array
     {
-        foreach ($openAPI->paths as $path) {
-            foreach ($path->getAllOperations() as $operation) {
+        foreach ($openAPI->paths as $endpoint => $pathItem) {
+            foreach ($pathItem->getAllOperations() as $method => $operation) {
                 foreach ($operation->responses as $statusCode => $response) {
                     if ($response instanceof Response) {
-                        $anonymousResponses[self::createResponseClassNameFromOperationAndStatusCode($operation, $statusCode)] = $response;
+                        $anonymousResponses[(string)$this->responseClassNameGenerator->createResponseClassName($method, $endpoint, $operation, $statusCode)] = $response;
                     }
                 }
             }
@@ -56,24 +59,12 @@ readonly class ResponseGenerator
         return $anonymousResponses ?? [];
     }
 
-    public static function createResponseClassNameFromOperationAndStatusCode(Operation $operation, string $statusCode): string
+    public function generateResponse(FullyQualifiedClassName $fqcn, Response $response, OpenAPI $openAPI): void
     {
-        return ucfirst($operation->operationId . $statusCode . 'Response');
-    }
-
-    public static function createResponseClassNameFromReferencePath(string $referencePath): string
-    {
-        $referencePath = explode('/', $referencePath);
-
-        return array_pop($referencePath);
-    }
-
-    public function generateResponse(string $name, Response $response, OpenAPI $openAPI): void
-    {
-        $namespace = new PhpNamespace($this->config->namespace . '\Response');
-        $class = new ClassType($name);
+        $namespace = new PhpNamespace($fqcn->getNamespace());
+        $class = new ClassType($fqcn->getClassName());
         $class->addComment($response->description);
-        $this->addConstructor($class, $response, $openAPI, $name);
+        $this->addConstructor($class, $response, $openAPI, $fqcn);
         $this->addFactory($class, $response, $openAPI);
 
         $namespace->add($class);
@@ -82,7 +73,7 @@ readonly class ResponseGenerator
         $file->setStrictTypes();
         $file->addNamespace($namespace);
 
-        $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Response/' . ucfirst($name) . '.php', $file);
+        $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Response/' . ucfirst($fqcn) . '.php', $file);
     }
 
     private function addFactory(
@@ -114,17 +105,17 @@ readonly class ResponseGenerator
             ->addBody('return new self(' . PHP_EOL . '    $statusCode, ');
 
         if ($jsonMediaType->schema instanceof Reference) {
-            $className = self::createResponseClassNameFromReferencePath($jsonMediaType->schema->ref);
+            $fqcn = $this->responseClassNameGenerator->createResponseClassNameFromReferencePath($jsonMediaType->schema->ref);
             /** @var Schema $schema */
             $schema = $openAPI->resolveReference($jsonMediaType->schema);
         } else {
             $schema = $jsonMediaType->schema;
-            $className = null;
+            $fqcn = null;
         }
 
         // @todo Optimize code
         if ($schema->type[0] === SchemaType::OBJECT) { // @phpstan-ignore-line
-            $factory->addBody('    \\' . $this->config->namespace . '\Schema\\' . $className . '::make($data)');
+            $factory->addBody('    \\' . $this->config->namespace . '\Schema\\' . $fqcn . '::make($data)');
         } else {
             $factory->addBody('    $data');
         }

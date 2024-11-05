@@ -1,0 +1,7 @@
+/**
+ * # Pet
+ *
+ * Some description
+ *
+ * @link https://example.com/docs
+ */

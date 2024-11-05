@@ -33,8 +33,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Xenos\\OpenApiClientGeneratorTest\\": "tests/src",
-            "Xenos\\OpenApiClientGeneratorFixtureTest\\": "tests/fixtures",
+            "Xenos\\OpenApiClientGeneratorTest\\": "tests",
             "Xenos\\OpenApiClientGeneratorFixture\\": "fixtures",
             "Xenos\\OpenApiClientGeneratorTestHelper\\": "testHelper"
         }

@@ -4,32 +4,39 @@ declare(strict_types=1);
 
 namespace Xenos\OpenApiClientGeneratorTestHelper;
 
+use Nette\PhpGenerator\ClassType;
+use Nette\PhpGenerator\PhpFile;
+use Nette\PhpGenerator\PhpNamespace;
+use Nette\PhpGenerator\PsrPrinter;
 use ReflectionClass;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 
-use function file_get_contents;
+use function class_exists;
+use function dirname;
+use function file_put_contents;
+use function is_dir;
+use function mkdir;
 use function realpath;
 use function str_replace;
-use function strlen;
+use function strrpos;
 use function substr;
 use function sys_get_temp_dir;
-use function time;
 
 class TmpDir
 {
-    const string ROOT_NAMESPACE = 'Xenos\OpenApiClientGeneratorFixture\\';
+    const string ROOT_NAMESPACE = 'Xenos\OpenApiClientGeneratorFixture';
 
     public readonly string $namespace;
     public readonly string $path;
 
-    public function __construct(string $namespace) {
-        $this->namespace = self::ROOT_NAMESPACE . $namespace;
+    public function __construct(string $namespace = '') {
+        $this->namespace = self::ROOT_NAMESPACE . (!empty($namespace) ? '\\' : '') . $namespace;
         $this->path = self::createTmpDir();
     }
 
     private static function createTmpDir(): string
     {
-        return sys_get_temp_dir() . '/openApiClient/' . time();
+        return sys_get_temp_dir() . '/openApiClient/' . \microtime(true);
     }
 
     private static function namespaceToDir(string $class): string
@@ -45,32 +52,16 @@ class TmpDir
     public function makeConfig(): Config
     {
         return new Config(
-            namespace: $this->getTemporaryModifiedNamespace(),
+            namespace: $this->namespace,
             directory: $this->path
         );
     }
 
     public function reflectGeneratedClass(string $class): ReflectionClass
     {
-        require_once realpath($this->path . self::getPath($class));
-        return new ReflectionClass($this->getTemporaryModifiedNamespace() . '\\' . $class);
-    }
+        $this->require($class);
 
-    public function reflectFixture(string $class): ReflectionClass
-    {
         return new ReflectionClass($this->namespace . '\\' . $class);
-    }
-
-    public function getFixtureFile(string $relativePath): string
-    {
-        return file_get_contents($this->getFixturesMainDir() . DIRECTORY_SEPARATOR . $relativePath);
-    }
-
-    public function getGeneratedFile(string $relativePath): string
-    {
-        return $this->removeTemporaryNamespaceModifier(
-            file_get_contents($this->path . '/src/' . $relativePath)
-        );
     }
 
     public function getGeneratedFilePath(string $relativePath): string
@@ -78,18 +69,46 @@ class TmpDir
         return $this->path . '/src/' . $relativePath;
     }
 
-    public function removeTemporaryNamespaceModifier(string $code): string
+    /** @return class-string */
+    public function getFullyQualifiedClassName(string $relativeClassName): string
     {
-        return str_replace(
-            search: $this->getTemporaryModifiedNamespace(),
-            replace: $this->namespace,
-            subject: $code
-        );
+        return $this->namespace . '\\' . $relativeClassName;
     }
 
-    private function getTemporaryModifiedNamespace(): string
+    public function addClass(ClassType $classType, string $namespace)
     {
-        return $this->namespace . 'x';
+        $file = new PhpFile();
+        $namespace = new PhpNamespace($this->namespace . '\\' . $namespace);
+        $namespace->add($classType);
+        $file->addNamespace($namespace);
+        $printer = new PsrPrinter();
+
+        $path = $this->getGeneratedFilePath(
+            str_replace(
+                search: '\\',
+                replace: DIRECTORY_SEPARATOR,
+                subject: $classType->getName()
+            )
+        ) . '.php';
+        $this->filePutContentsSave(
+            $path,
+            $printer->printFile($file)
+        );
+
+        $this->require($classType->getName());
+    }
+
+    private function filePutContentsSave(string $filePath, string $data, int $flags = 0): int|false
+    {
+        $directory = dirname($filePath);
+
+        if (!is_dir($directory)) {
+            if (!mkdir($directory, 0777, true) && !is_dir($directory)) {
+                return false;
+            }
+        }
+
+        return file_put_contents($filePath, $data, $flags);
     }
 
     private static function getPath(string $class): string
@@ -97,8 +116,14 @@ class TmpDir
         return '/src/' . self::namespaceToDir($class) . '.php';
     }
 
-    private function getFixturesMainDir(): string
+    /**
+     * @param string $class
+     * @return void
+     */
+    public function require(string $class): void
     {
-        return __DIR__ . '/../fixtures/' . substr(string: self::namespaceToDir($this->namespace), offset: strlen(self::ROOT_NAMESPACE));
+        if (!class_exists($this->namespace . '\\' . $class)) {
+            require_once realpath($this->path . self::getPath($class));
+        }
     }
 }

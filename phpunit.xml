@@ -24,11 +24,8 @@
     </coverage>
     <logging/>
     <testsuites>
-        <testsuite name="src">
-            <directory>tests/src</directory>
-        </testsuite>
-        <testsuite name="fixtures">
-            <directory>tests/fixtures</directory>
+        <testsuite name="unit">
+            <directory>tests</directory>
         </testsuite>
     </testsuites>
     <source>

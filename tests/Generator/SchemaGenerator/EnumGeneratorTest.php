@@ -82,7 +82,7 @@ class EnumGeneratorTest extends TestCase
         $this->enumClassGenerator->generateSchema('SomeEnum', $schema, $this->createStub(OpenAPI::class));
 
         self::assertFileExists(
-            filename: $this->tmpDir->getGeneratedFilePath('Schema/SomeEnum.php'),
+            filename: $this->tmpDir->getAbsolutePath('Schema/SomeEnum.php'),
             message: 'The expected file was not created.'
         );
 

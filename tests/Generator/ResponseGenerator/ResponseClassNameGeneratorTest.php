@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Generator\ResponseGenerator\ResponseClassNameGenerator;
 
+use function array_map;
 use function var_export;
 
 class ResponseClassNameGeneratorTest extends TestCase
@@ -32,14 +33,31 @@ class ResponseClassNameGeneratorTest extends TestCase
             $expectedClassName,
             (string)$this->responseClassNameGenerator->createResponseClassNameFromComponentsKey($componentsKey)
         );
-        self::assertMatchesRegularExpression(
-            pattern: '/^[a-zA-Z_\\x80-\\xff][a-zA-Z0-9_\\x80-\\xff]*(\\\\[a-zA-Z_\\x80-\\xff][a-zA-Z0-9_\\x80-\\xff]*)*$/',
-            string: $expectedClassName,
-            message: ResponseClassNameGenerator::class . ' generated an invalid class name',
+        self::assertIsValidClassName($expectedClassName);
+    }
+
+    #[DataProvider('provideReferencePathsAndClassNames')]
+    public function testCreateResponseClassNameFromReferencePath(
+        string $referencePath,
+        string $expectedClassName,
+    ): void {
+        self::assertSame(
+            $expectedClassName,
+            (string)$this->responseClassNameGenerator->createResponseClassNameFromReferencePath($referencePath)
+        );
+        self::assertIsValidClassName($expectedClassName);
+    }
+
+    /** @return array<string, array{0: string, 1: string}> */
+    public static function provideReferencePathsAndClassNames(): array
+    {
+        return array_map(
+            callback: fn (array $componentNameAndClassName): array => ['components/responses/' . $componentNameAndClassName[0], $componentNameAndClassName[1]],
+            array: self::provideComponentNamesAndClassNames(),
         );
     }
 
-    /** @return array<int|string, array<int, string>> */
+    /** @return array<string, array{0: string, 1: string}> */
     public static function provideComponentNamesAndClassNames(): array
     {
         return [
@@ -49,10 +67,10 @@ class ResponseClassNameGeneratorTest extends TestCase
             'lower dot case' => ['pet.shop', 'PetShop\Response\PetShop'],
             'lower kebap case' => ['class-name', 'PetShop\Response\ClassName'],
             'lower snake case' => ['test_class', 'PetShop\Response\TestClass'],
-            ['my-dog.pet_shop', 'PetShop\Response\MyDogPetShop'],
-            ['.pet', 'PetShop\Response\Pet'],
-            ['_pet', 'PetShop\Response\Pet'],
-            ['-pet', 'PetShop\Response\Pet']
+            'mixed case' => ['my-dog.pet_shop', 'PetShop\Response\MyDogPetShop'],
+            'starting with dot' => ['.pet', 'PetShop\Response\Pet'],
+            'starting with underscore' => ['_pet', 'PetShop\Response\Pet'],
+            'starting with dash' => ['-pet', 'PetShop\Response\Pet']
         ];
     }
 
@@ -80,5 +98,14 @@ class ResponseClassNameGeneratorTest extends TestCase
             ['ü'],
             ['ß'],
         ];
+    }
+
+    private static function assertIsValidClassName(string $expectedClassName): void
+    {
+        self::assertMatchesRegularExpression(
+            pattern: '/^[a-zA-Z_\\x80-\\xff][a-zA-Z0-9_\\x80-\\xff]*(\\\\[a-zA-Z_\\x80-\\xff][a-zA-Z0-9_\\x80-\\xff]*)*$/',
+            string: $expectedClassName,
+            message: ResponseClassNameGenerator::class . ' generated an invalid class name',
+        );
     }
 }

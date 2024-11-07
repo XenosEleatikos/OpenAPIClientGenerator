@@ -11,15 +11,16 @@ use Nette\PhpGenerator\PsrPrinter;
 use ReflectionClass;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 
+use function array_filter;
+use function array_values;
 use function class_exists;
 use function dirname;
 use function file_put_contents;
 use function is_dir;
 use function mkdir;
 use function realpath;
+use function scandir;
 use function str_replace;
-use function strrpos;
-use function substr;
 use function sys_get_temp_dir;
 
 class TmpDir
@@ -64,9 +65,25 @@ class TmpDir
         return new ReflectionClass($this->namespace . '\\' . $class);
     }
 
-    public function getGeneratedFilePath(string $relativePath): string
+    public function getAbsolutePath(string $relativePath): string
     {
         return $this->path . '/src/' . $relativePath;
+    }
+
+    public function list(string $directoryPath): array
+    {
+        $directoryPath = $this->getAbsolutePath($directoryPath);
+
+        if (!is_dir($directoryPath)) {
+            return [];
+        }
+
+        return array_values(
+            array: array_filter(
+                array: scandir($directoryPath),
+                callback: fn(string $file): bool => $file !== '.' && $file !== '..'
+            )
+        );
     }
 
     /** @return class-string */
@@ -83,7 +100,7 @@ class TmpDir
         $file->addNamespace($namespace);
         $printer = new PsrPrinter();
 
-        $path = $this->getGeneratedFilePath(
+        $path = $this->getAbsolutePath(
             str_replace(
                 search: '\\',
                 replace: DIRECTORY_SEPARATOR,

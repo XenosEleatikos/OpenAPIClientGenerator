@@ -52,7 +52,7 @@ class ApiGeneratorTest extends TestCase
 
         $apiGenerator->generate(openAPI: $openAPI, tag: 'Pet');
 
-        self::assertFileExists($tmpDir->getGeneratedFilePath('Api/PetApi.php')); // @todo extract in separate test
+        self::assertFileExists($tmpDir->getAbsolutePath('Api/PetApi.php')); // @todo extract in separate test
 
         $reflectionClassGenerated = $tmpDir->reflectGeneratedClass('Api\PetApi');
 

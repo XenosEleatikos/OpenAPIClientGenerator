@@ -78,7 +78,7 @@ class ClientGeneratorTest extends TestCase
             )
         );
 
-        self::assertFileExists($this->tmpDir->getGeneratedFilePath('Client.php'));
+        self::assertFileExists($this->tmpDir->getAbsolutePath('Client.php'));
 
         include realpath($this->tmpDir . '/src/Client.php');
 
@@ -100,7 +100,7 @@ class ClientGeneratorTest extends TestCase
 
         $this->clientGenerator->generate($openAPI);
 
-        self::assertFileExists($this->tmpDir->getGeneratedFilePath('Client.php'));
+        self::assertFileExists($this->tmpDir->getAbsolutePath('Client.php'));
 
         $reflectionClassGenerated = $this->tmpDir->reflectGeneratedClass('Client');
 
@@ -127,7 +127,7 @@ class ClientGeneratorTest extends TestCase
         $reflectionClass = $this->tmpDir->reflectGeneratedClass('Client');
         $generatedMethods = Reflection::getMethodNames($reflectionClass, ['__construct']);
 
-        self::assertFileExists($this->tmpDir->getGeneratedFilePath('Client.php'));
+        self::assertFileExists($this->tmpDir->getAbsolutePath('Client.php'));
         self::assertApiFactoriesAreGenerated($expectedApiFactories, $generatedMethods);
 
         // Generate dependencies

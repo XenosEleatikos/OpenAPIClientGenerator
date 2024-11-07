@@ -7,6 +7,8 @@ namespace Xenos\OpenApiClientGenerator\Model;
 use InvalidArgumentException;
 
 use function preg_match;
+use function strrpos;
+use function substr;
 
 class FullyQualifiedClassName
 {

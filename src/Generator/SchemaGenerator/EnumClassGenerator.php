@@ -136,8 +136,8 @@ readonly class EnumClassGenerator implements SchemaGeneratorInterface
         return array_values($types);
     }
 
-    public function getFactoryCall(string $propertyClassName, string $propertyName): string
+    public function getFactoryCall(string $propertyClassName, string $parameter): string
     {
-        return $propertyClassName . '::from($data->' . $propertyName.')';
+        return $propertyClassName . '::from(' . $parameter . ')';
     }
 }

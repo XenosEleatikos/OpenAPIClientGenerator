@@ -7,50 +7,55 @@ namespace Xenos\OpenApiClientGenerator\Generator\ResponseGenerator;
 use Error;
 use InvalidArgumentException;
 use Xenos\OpenApi\Model\AbstractComponentsSubList;
+use Xenos\OpenApi\Model\Method;
 use Xenos\OpenApi\Model\Operation;
+use Xenos\OpenApiClientGenerator\Generator\ApiGenerator\MethodNameGenerator;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Model\FullyQualifiedClassName;
 
-use function array_map;
 use function array_pop;
 use function explode;
-use function implode;
 use function is_null;
 use function preg_match;
 use function preg_replace_callback;
-use function strtolower;
 use function strtoupper;
 use function ucfirst;
+use function var_export;
 
-class ResponseClassNameGenerator
+readonly class ResponseClassNameGenerator
 {
     public function __construct(
-        private Config $config
+        private Config $config,
+        private MethodNameGenerator $methodNameGenerator,
     ) {
     }
 
-    public function createResponseClassName(string $method, string $endpoint, Operation $operation, string $statusCode): FullyQualifiedClassName
-    {
-        if (empty($operation->operationId)) {
-            $operationName = strtolower($method) . $this->convertEndpointToCamelCase($endpoint);
-        } else {
-            $operationName = $operation->operationId;
-        }
-
-        return new FullyQualifiedClassName($this->config->namespace . '\Response\\' . ucfirst($operationName . $statusCode . 'Response'));
+    public function fromOperation(
+        Method $method,
+        string $endpoint,
+        Operation $operation,
+        string $statusCode
+    ): FullyQualifiedClassName {
+        return new FullyQualifiedClassName(
+            fqcn: $this->config->namespace
+            . '\Response\\'
+            . ucfirst($this->methodNameGenerator->generateMethodName($method, $endpoint, $operation))
+            . ucfirst($statusCode) // might be "default"
+            . 'Response'
+        );
     }
 
-    public function createResponseClassNameFromReferencePath(string $referencePath): FullyQualifiedClassName
+    public function fromReferencePath(string $referencePath): FullyQualifiedClassName
     {
         $referencePath = explode('/', $referencePath);
 
-        return $this->createResponseClassNameFromComponentsKey(array_pop($referencePath));
+        return $this->fromComponentsKey(array_pop($referencePath));
     }
 
-    public function createResponseClassNameFromComponentsKey(string $componentsKey): FullyQualifiedClassName
+    public function fromComponentsKey(string $componentsKey): FullyQualifiedClassName
     {
         if (!preg_match(AbstractComponentsSubList::KEY_PATTERN, $componentsKey)) {
-            throw new InvalidArgumentException('Component key must be a string matching the regular expression "^[a-zA-Z0-9._-]+$", ' . var_export($componentsKey, true) . ' given.');
+            throw new InvalidArgumentException('Component key must be a string matching the regular expression "' . AbstractComponentsSubList::KEY_PATTERN . '", ' . var_export($componentsKey, true) . ' given.');
         }
 
         // Removes some special chars which are allowed in component keys and sets the following char to upper case
@@ -65,16 +70,5 @@ class ResponseClassNameGenerator
         }
 
         return new FullyQualifiedClassName($this->config->namespace . '\Response\\' . ucfirst($className));
-    }
-
-    private function convertEndpointToCamelCase(string $endpoint): string
-    {
-        return implode(
-            separator: '',
-            array: array_map(
-                fn ($part) => ucfirst($part),
-                explode('/', $endpoint)
-            )
-        );
     }
 }

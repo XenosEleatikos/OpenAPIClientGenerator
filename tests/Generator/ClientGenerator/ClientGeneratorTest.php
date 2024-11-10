@@ -64,7 +64,10 @@ class ClientGeneratorTest extends TestCase
                 methodNameGenerator: new MethodNameGenerator(),
                 classCommentGenerator: new \Xenos\OpenApiClientGenerator\Generator\ApiGenerator\ClassCommentGenerator(),
                 methodCommentGenerator: new MethodCommentGenerator(),
-                classNameGenerator: new ResponseClassNameGenerator($config),
+                classNameGenerator: new ResponseClassNameGenerator(
+                    config: $config,
+                    methodNameGenerator: new MethodNameGenerator(),
+                ),
             )
         );
     }
@@ -102,7 +105,7 @@ class ClientGeneratorTest extends TestCase
 
         self::assertFileExists($this->tmpDir->getAbsolutePath('Client.php'));
 
-        $reflectionClassGenerated = $this->tmpDir->reflectGeneratedClass('Client');
+        $reflectionClassGenerated = $this->tmpDir->reflect('Client');
 
         self::assertIsString(
             actual: $reflectionClassGenerated->getDocComment(),
@@ -124,7 +127,7 @@ class ClientGeneratorTest extends TestCase
     ): void {
         $this->clientGenerator->generate($openAPI);
 
-        $reflectionClass = $this->tmpDir->reflectGeneratedClass('Client');
+        $reflectionClass = $this->tmpDir->reflect('Client');
         $generatedMethods = Reflection::getMethodNames($reflectionClass, ['__construct']);
 
         self::assertFileExists($this->tmpDir->getAbsolutePath('Client.php'));

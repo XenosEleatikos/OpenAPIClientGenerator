@@ -58,7 +58,7 @@ class TmpDir
         );
     }
 
-    public function reflectGeneratedClass(string $class): ReflectionClass
+    public function reflect(string $class): ReflectionClass
     {
         $this->require($class);
 

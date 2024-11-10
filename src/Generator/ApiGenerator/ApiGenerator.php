@@ -8,6 +8,7 @@ use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
 use Xenos\OpenApi\Model\MediaType;
+use Xenos\OpenApi\Model\Method;
 use Xenos\OpenApi\Model\OpenAPI;
 use Xenos\OpenApi\Model\Operation;
 use Xenos\OpenApi\Model\ParameterLocation;
@@ -16,7 +17,6 @@ use Xenos\OpenApi\Model\Reference;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 use Xenos\OpenApiClientGenerator\Generator\ResponseGenerator\ResponseClassNameGenerator;
-use Xenos\OpenApiClientGenerator\Generator\ResponseGenerator\ResponseGenerator;
 
 use function array_unique;
 use function implode;
@@ -26,11 +26,11 @@ use function ucfirst;
 readonly class ApiGenerator
 {
     public function __construct(
-        private Config                     $config,
-        private Printer                    $printer,
-        private MethodNameGenerator        $methodNameGenerator,
-        private ClassCommentGenerator      $classCommentGenerator,
-        private MethodCommentGenerator     $methodCommentGenerator,
+        private Config $config,
+        private Printer $printer,
+        private MethodNameGenerator $methodNameGenerator,
+        private ClassCommentGenerator $classCommentGenerator,
+        private MethodCommentGenerator $methodCommentGenerator,
         private ResponseClassNameGenerator $classNameGenerator,
     ) {
     }
@@ -56,33 +56,33 @@ readonly class ApiGenerator
         $this->printer->printFile($this->getApiPath() . DIRECTORY_SEPARATOR . self::getClassName($tag) . '.php', $file);
     }
 
-    /** @return array<int, array{0: string, 1: string, 2: Operation}> */
+    /** @return array<int, array{0: Method, 1: string, 2: Operation}> */
     private static function getAllOperations(Paths $paths, string $tag): array
     {
         foreach ($paths as $path => $pathItem) {
             if ($pathItem->get?->hasTag($tag)) {
-                $operations[] = ['GET', $path, $pathItem->get];
+                $operations[] = [Method::GET, $path, $pathItem->get];
             }
             if ($pathItem->put?->hasTag($tag)) {
-                $operations[] = ['PUT', $path, $pathItem->put];
+                $operations[] = [Method::PUT, $path, $pathItem->put];
             }
             if ($pathItem->post?->hasTag($tag)) {
-                $operations[] = ['POST', $path, $pathItem->post];
+                $operations[] = [Method::POST, $path, $pathItem->post];
             }
             if ($pathItem->delete?->hasTag($tag)) {
-                $operations[] = ['DELETE', $path, $pathItem->delete];
+                $operations[] = [Method::DELETE, $path, $pathItem->delete];
             }
             if ($pathItem->options?->hasTag($tag)) {
-                $operations[] = ['OPTIONS', $path, $pathItem->options];
+                $operations[] = [Method::OPTIONS, $path, $pathItem->options];
             }
             if ($pathItem->head?->hasTag($tag)) {
-                $operations[] = ['HEAD', $path, $pathItem->head];
+                $operations[] = [Method::HEAD, $path, $pathItem->head];
             }
             if ($pathItem->patch?->hasTag($tag)) {
-                $operations[] = ['PATCH', $path, $pathItem->patch];
+                $operations[] = [Method::PATCH, $path, $pathItem->patch];
             }
             if ($pathItem->trace?->hasTag($tag)) {
-                $operations[] = ['TRACE', $path, $pathItem->trace];
+                $operations[] = [Method::TRACE, $path, $pathItem->trace];
             }
         }
 
@@ -101,7 +101,7 @@ readonly class ApiGenerator
     private function addMethodToApi(
         ClassType $class,
         OpenAPI $openAPI,
-        string $method,
+        Method $method,
         string $path,
         Operation $operation
     ): void {
@@ -112,10 +112,10 @@ readonly class ApiGenerator
         foreach ($operation->responses as $statusCode => $response) {
             $statusCode = (string)$statusCode;
             if ($response instanceof Reference) {
-                $returnTypes[$statusCode] = $this->classNameGenerator->createResponseClassNameFromReferencePath($response->ref);
+                $returnTypes[$statusCode] = $this->classNameGenerator->fromReferencePath($response->ref);
                 $response = $openAPI->resolveReference($response);
             } else {
-                $returnTypes[$statusCode] = $this->classNameGenerator->createResponseClassName($method, $path, $operation, $statusCode);
+                $returnTypes[$statusCode] = $this->classNameGenerator->fromOperation($method, $path, $operation, $statusCode);
             }
 
             /** @var null|MediaType $jsonMediaType */
@@ -175,11 +175,11 @@ readonly class ApiGenerator
         return $this->config->directory . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Api';
     }
 
-    public function createApiCall(string $method, string $path): string
+    public function createApiCall(Method $method, string $path): string
     {
         return '$this->httpClient->sendRequest(' . PHP_EOL
-            . '    new  \GuzzleHttp\Psr7\Request(' . PHP_EOL
-            . '        method: \'' . $method . '\',' . PHP_EOL
+            . '    new \GuzzleHttp\Psr7\Request(' . PHP_EOL
+            . '        method: \'' . $method->value . '\',' . PHP_EOL
             . '        uri: ' . $path . PHP_EOL
             . '    )' . PHP_EOL
             . ');';

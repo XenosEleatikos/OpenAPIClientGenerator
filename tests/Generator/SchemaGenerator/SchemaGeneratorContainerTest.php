@@ -8,7 +8,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Xenos\OpenApi\Model\Schema;
+use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\ContainerAwareInterface;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaClassNameGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaGeneratorContainer;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaGeneratorInterface;
 
@@ -34,7 +36,11 @@ class SchemaGeneratorContainerTest extends TestCase
             $generators[] = $generator;
         }
 
-        $schemaGeneratorContainer = new SchemaGeneratorContainer();
+        $schemaGeneratorContainer = new SchemaGeneratorContainer(
+            config: $this->createStub(Config::class),
+            schemaClassNameGenerator: $this->createStub(SchemaClassNameGenerator::class)
+        );
+
         $schemaGeneratorContainer->add(...$generators ?? []);
 
         $schemaGenerator = $schemaGeneratorContainer->getSchemaGenerator($schema);
@@ -80,7 +86,10 @@ class SchemaGeneratorContainerTest extends TestCase
 
     public function testGetSchemaGeneratorSetsSelfToContainerAwareInstances(): void
     {
-        $schemaGeneratorContainer = new SchemaGeneratorContainer();
+        $schemaGeneratorContainer = new SchemaGeneratorContainer(
+            config: $this->createStub(Config::class),
+            schemaClassNameGenerator: $this->createStub(SchemaClassNameGenerator::class),
+        );
 
         /** @var MockObject&SchemaGeneratorInterface&ContainerAwareInterface $generator */
         $generator = $this->createMockForIntersectionOfInterfaces([SchemaGeneratorInterface::class, ContainerAwareInterface::class]);

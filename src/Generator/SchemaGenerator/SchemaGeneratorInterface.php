@@ -9,5 +9,5 @@ interface SchemaGeneratorInterface
 {
     public function isResponsible(Schema $schema): bool;
     public function generateSchema(string $name, Schema $schema, OpenAPI $openAPI): void;
-    public function getFactoryCall(string $propertyClassName, string $propertyName): string;
+    public function getFactoryCall(string $propertyClassName, string $parameter): string;
 }

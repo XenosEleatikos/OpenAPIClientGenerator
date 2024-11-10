@@ -53,7 +53,7 @@ class EnumClassGeneratorTest extends TestCase
             message: 'The expected file was not created.'
         );
 
-        $reflectionClass = $this->tmpDir->reflectGeneratedClass('Schema\EnumClass');
+        $reflectionClass = $this->tmpDir->reflect('Schema\EnumClass');
         self::assertFalse(
             condition: $reflectionClass->isAbstract(),
             message: 'The enum class should not be abstract.'
@@ -74,7 +74,7 @@ class EnumClassGeneratorTest extends TestCase
         $schema = (new Schema(enum: ['one', 2, 3.4]));
         $this->enumClassGenerator->generateSchema('EnumClass', $schema, $this->createStub(OpenAPI::class));
 
-        $className = $this->tmpDir->reflectGeneratedClass('Schema\EnumClass')->name;
+        $className = $this->tmpDir->reflect('Schema\EnumClass')->name;
 
         $this->expectException(ValueError::class);
         $this->expectExceptionMessage($expectedMessage);

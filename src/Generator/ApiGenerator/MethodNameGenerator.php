@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Xenos\OpenApiClientGenerator\Generator\ApiGenerator;
 
+use Xenos\OpenApi\Model\Method;
 use Xenos\OpenApi\Model\Operation;
 
 use function array_map;
@@ -16,7 +17,7 @@ use function ucfirst;
 
 class MethodNameGenerator
 {
-    public static function generateMethodName(string $method, string $path, Operation $operation): string
+    public static function generateMethodName(Method $method, string $path, Operation $operation): string
     {
         if (!empty($operation->operationId)) {
             return $operation->operationId;
@@ -25,7 +26,7 @@ class MethodNameGenerator
         return self::getMethodNameFromMethodAndPath($method, $path);
     }
 
-    private static function getMethodNameFromMethodAndPath(string $method, string $path): string
+    private static function getMethodNameFromMethodAndPath(Method $method, string $path): string
     {
         $path = trim($path, '/');
 
@@ -37,6 +38,6 @@ class MethodNameGenerator
             $segments
         );
 
-        return strtolower($method) . implode($segments);
+        return strtolower($method->lowerCase()) . implode($segments);
     }
 }

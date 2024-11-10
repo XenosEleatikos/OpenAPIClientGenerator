@@ -15,6 +15,7 @@ use Xenos\OpenApi\Model\OpenAPI;
 use Xenos\OpenApi\Model\Schema;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumGenerator;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaClassNameGenerator;
 use Xenos\OpenApiClientGeneratorTestHelper\TmpDir;
 
 use function array_keys;
@@ -64,11 +65,9 @@ class EnumGeneratorTest extends TestCase
     protected function setUp(): void
     {
         $this->tmpDir = new TmpDir();
-        $config = $this->tmpDir->makeConfig();
-
         $this->enumClassGenerator = new EnumGenerator(
-            $config,
-            new Printer(new PsrPrinter())
+            config: $this->tmpDir->makeConfig(),
+            printer: new Printer(new PsrPrinter()),
         );
     }
 
@@ -86,7 +85,7 @@ class EnumGeneratorTest extends TestCase
             message: 'The expected file was not created.'
         );
 
-        $reflectionClass = $this->tmpDir->reflectGeneratedClass('Schema\SomeEnum');
+        $reflectionClass = $this->tmpDir->reflect('Schema\SomeEnum');
         self::assertTrue(
             condition: $reflectionClass->isEnum(),
             message: 'Expected that an enum was generated.'

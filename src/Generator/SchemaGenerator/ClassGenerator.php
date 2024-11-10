@@ -10,6 +10,7 @@ use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
 use stdClass;
 use Xenos\OpenApi\Model\OpenAPI;
+use Xenos\OpenApi\Model\Reference;
 use Xenos\OpenApi\Model\Schema;
 use Xenos\OpenApi\Model\SchemaType;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
@@ -23,10 +24,8 @@ class ClassGenerator implements SchemaGeneratorInterface, ContainerAwareInterfac
     private ?SchemaGeneratorContainer $schemaGeneratorContainer = null;
 
     public function __construct(
-        private Config $config,
-        private Printer $printer,
-        private TypeHintGenerator $typeHintGenerator,
-        private SchemaClassNameGenerator $schemaClassNameGenerator,
+        private readonly Config $config,
+        private readonly Printer $printer,
     ) {
     }
 
@@ -51,15 +50,23 @@ class ClassGenerator implements SchemaGeneratorInterface, ContainerAwareInterfac
         $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Schema/' . ucfirst($name) . '.php', $file);
     }
 
-    private function addConstructor(ClassType $class, Schema $schema, OpenAPI $openAPI, string $schemaName): void
+    private function addConstructor(ClassType $class, Schema $schema, OpenAPI $openAPI, string $className): void
     {
         $constructor = $class->addMethod('__construct');
 
-        foreach ($schema->properties as $name => $property) {
+        foreach ($schema->properties as $propertyName => $schemaOrReference) {
             $constructor
-                ->addPromotedParameter($name)
+                ->addPromotedParameter($propertyName)
                 ->setType(
-                    implode('|', $this->typeHintGenerator->getReturnTypes($property, $openAPI, $schemaName, $name))
+                    implode(
+                        separator: '|',
+                        array: $this->getContainer()->getReturnTypes(
+                            schemaOrReference: $schemaOrReference,
+                            openAPI: $openAPI,
+                            parentClassName: $className,
+                            propertyName: $propertyName
+                        )
+                    )
                 );
         }
     }
@@ -70,17 +77,30 @@ class ClassGenerator implements SchemaGeneratorInterface, ContainerAwareInterfac
             ->setStatic()
             ->setReturnType('self');
         $factory->addParameter('data')
-            ->setType(stdClass::class);
+            ->setType(stdClass::class); //  @todo Might be other types
         $factory
             ->addBody('return new self(');
 
         foreach ($schema->properties as $propertyName => $propertySchemaOrReference) {
-            list($propertyClassName, $propertySchema) = $this->schemaClassNameGenerator->createSchemaClassName($propertySchemaOrReference, $openAPI, $className, $propertyName);
+            $returnTypes = $this->getContainer()->getReturnTypes(
+                schemaOrReference: $propertySchemaOrReference,
+                openAPI: $openAPI,
+                parentClassName: $className,
+                propertyName: $propertyName
+            );
+
+            /** @var Schema $propertySchema */
+            $propertySchema = $propertySchemaOrReference instanceof Reference
+                ? $openAPI->resolveReference($propertySchemaOrReference)
+                : $propertySchemaOrReference;
 
             $schemaGenerator = $this->getContainer()->getSchemaGenerator($propertySchema);
-            $factoryCall = $schemaGenerator === null
-                ? self::getPropertyCall($propertyName)
-                : $schemaGenerator->getFactoryCall($propertyClassName, $propertyName);
+            $factoryCall = isset($schemaGenerator)
+                ? $schemaGenerator->getFactoryCall(
+                    propertyClassName: $returnTypes[0]->getClassName(),
+                    parameter: '$data->' . $propertyName
+                )
+                : self::getPropertyCall($propertyName);
 
             $factory
                 ->addBody('    '.$propertyName.': ' . $factoryCall.',');
@@ -94,9 +114,9 @@ class ClassGenerator implements SchemaGeneratorInterface, ContainerAwareInterfac
         return '$data->' . $propertyName;
     }
 
-    public function getFactoryCall(string $propertyClassName, string $propertyName): string
+    public function getFactoryCall(string $propertyClassName, string $parameter): string
     {
-        return $propertyClassName . '::make($data->' . $propertyName.')';
+        return $propertyClassName . '::make(' . $parameter . ')';
     }
 
     public function setContainer(SchemaGeneratorContainer $schemaGeneratorContainer): void

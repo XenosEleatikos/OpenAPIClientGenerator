@@ -19,7 +19,7 @@ readonly class EnumGenerator implements SchemaGeneratorInterface
 {
     public function __construct(
         private Config $config,
-        private Printer $printer
+        private Printer $printer,
     ) {
     }
 
@@ -62,8 +62,8 @@ readonly class EnumGenerator implements SchemaGeneratorInterface
         $this->printer->printFile($this->config->directory . DIRECTORY_SEPARATOR . 'src/Schema/' . ucfirst($name) . '.php', $file);
     }
 
-    public function getFactoryCall(string $propertyClassName, string $propertyName): string
+    public function getFactoryCall(string $propertyClassName, string $parameter): string
     {
-        return $propertyClassName . '::from($data->' . $propertyName.')';
+        return $propertyClassName . '::from(' . $parameter . ')';
     }
 }

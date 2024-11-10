@@ -54,7 +54,7 @@ class ApiGeneratorTest extends TestCase
 
         self::assertFileExists($tmpDir->getAbsolutePath('Api/PetApi.php')); // @todo extract in separate test
 
-        $reflectionClassGenerated = $tmpDir->reflectGeneratedClass('Api\PetApi');
+        $reflectionClassGenerated = $tmpDir->reflect('Api\PetApi');
 
         self::assertIsString(
             actual: $reflectionClassGenerated->getDocComment(),
@@ -213,7 +213,7 @@ class ApiGeneratorTest extends TestCase
 
         $apiGenerator->generate(openAPI: $openAPI, tag: 'Pet');
 
-        $reflectionClassGenerated = $tmpDir->reflectGeneratedClass('Api\PetApi');
+        $reflectionClassGenerated = $tmpDir->reflect('Api\PetApi');
 
         $apiMethodsGenerated = Reflection::getMethodNames($reflectionClassGenerated, ['__construct']);
 
@@ -423,7 +423,7 @@ class ApiGeneratorTest extends TestCase
 
         $apiGenerator->generate(openAPI: $openAPI, tag: 'Pet');
 
-        $reflectionClassGenerated = $tmpDir->reflectGeneratedClass('Api\PetApi');
+        $reflectionClassGenerated = $tmpDir->reflect('Api\PetApi');
 
         $apiMethodsGenerated = Reflection::getMethodNames($reflectionClassGenerated, ['__construct']);
 
@@ -505,7 +505,10 @@ class ApiGeneratorTest extends TestCase
             methodNameGenerator: new MethodNameGenerator(),
             classCommentGenerator: new ClassCommentGenerator(),
             methodCommentGenerator: new MethodCommentGenerator(),
-            classNameGenerator: new ResponseClassNameGenerator($config),
+            classNameGenerator: new ResponseClassNameGenerator(
+                config: $config,
+                methodNameGenerator: new MethodNameGenerator(),
+            ),
         );
     }
 }

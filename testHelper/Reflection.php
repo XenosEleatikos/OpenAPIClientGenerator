@@ -7,6 +7,7 @@ namespace Xenos\OpenApiClientGeneratorTestHelper;
 use ReflectionClass;
 use ReflectionMethod;
 
+use ReflectionParameter;
 use function array_filter;
 use function array_map;
 use function array_values;
@@ -21,13 +22,23 @@ class Reflection
     public static function getMethodNames(ReflectionClass $reflectionClass, array $exclude = []): array
     {
         return array_values(
-            array_filter(
+            array: array_filter(
                 array_map(
-                    fn (ReflectionMethod $method): string => $method->getName(),
-                    $reflectionClass->getMethods()
+                    callback: fn (ReflectionMethod $method): string => $method->getName(),
+                    array: $reflectionClass->getMethods()
                 ),
-                fn (string $methodName) => !in_array($methodName, $exclude),
+                callback: fn (string $methodName) => !in_array($methodName, $exclude),
             )
         );
+    }
+
+    /** @return array<string, string> Parameter names as keys and types as value */
+    public static function getParameters(ReflectionMethod $reflectionMethod): array
+    {
+        foreach ($reflectionMethod->getParameters() as $reflectionParameter) {
+            $reflectionParameters[$reflectionParameter->getName()] = (string)$reflectionParameter->getType();
+        }
+
+        return $reflectionParameters ?? [];
     }
 }

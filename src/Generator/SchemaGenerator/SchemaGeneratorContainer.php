@@ -72,6 +72,7 @@ class SchemaGeneratorContainer
             )
             : $parameter;
     }
+
     /** @return array<int, string|FullyQualifiedClassName> */
     public function getReturnTypes(
         null|Schema|Reference $schemaOrReference,

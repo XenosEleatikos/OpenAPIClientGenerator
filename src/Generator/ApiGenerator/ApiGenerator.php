@@ -121,9 +121,9 @@ readonly class ApiGenerator
             /** @var null|MediaType $jsonMediaType */
             $jsonMediaType = $response->content['application/json'] ?? null;
             if (isset($jsonMediaType)) {
-                $returnCodeSnippets[] = '    ' . $statusCode . ' => \\' . $returnTypes[$statusCode] . '::make(' . self::generateStatusCode($statusCode) . ', json_decode($result->getBody()->getContents())),';
+                $returnCodeSnippets[] = '    ' . $statusCode . ' => \\' . $returnTypes[$statusCode] . '::make(statusCode: ' . self::generateStatusCode($statusCode) . ', data: json_decode($result->getBody()->getContents())),';
             } else {
-                $returnCodeSnippets[] = '    ' . $statusCode . ' => \\' . $returnTypes[$statusCode] . '::make(' . self::generateStatusCode($statusCode) . '),';
+                $returnCodeSnippets[] = '    ' . $statusCode . ' => \\' . $returnTypes[$statusCode] . '::make(statusCode: ' . self::generateStatusCode($statusCode) . '),';
             }
         }
 

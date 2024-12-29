@@ -33,18 +33,20 @@ class GeneratorFactory
             config: $config,
             methodNameGenerator: $methodNameGenerator
         );
-        $schemaGeneratorContainer = (new SchemaGeneratorContainer(config: $config, schemaClassNameGenerator: $schemaClassNameGenerator))
-            ->add(
-                new EnumGenerator(
-                    config: $config,
-                    printer: $printer,
-                ),
-                new EnumClassGenerator($config, $printer),
-                new ClassGenerator(
-                    config: $config,
-                    printer: $printer,
-                ),
-            );
+        $schemaGeneratorContainer = new SchemaGeneratorContainer(
+            config: $config,
+            schemaClassNameGenerator: $schemaClassNameGenerator,
+            classGenerator: new ClassGenerator(
+                config: $config,
+                printer: $printer,
+            ),
+            enumGenerator: new EnumGenerator(
+                config: $config,
+                printer: $printer,
+            ),
+            enumClassGenerator: new EnumClassGenerator($config, $printer),
+        );
+
         return new Generator(
             schemaGenerator: new SchemaGenerator(
                 schemaClassNameGenerator: $schemaClassNameGenerator,

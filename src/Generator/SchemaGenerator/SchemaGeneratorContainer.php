@@ -19,24 +19,19 @@ class SchemaGeneratorContainer
     public function __construct(
         private readonly Config $config,
         private readonly SchemaClassNameGenerator $schemaClassNameGenerator,
+        public ClassGenerator $classGenerator,
+        public EnumGenerator $enumGenerator,
+        public EnumClassGenerator $enumClassGenerator,
     ) {
+        $this->classGenerator->setContainer($this);
+
+        $this->generators[EnumGenerator::class] = $this->enumGenerator;
+        $this->generators[EnumClassGenerator::class] = $this->enumClassGenerator;
+        $this->generators[ClassGenerator::class] = $this->classGenerator;
     }
 
     /** @var SchemaGeneratorInterface[] */
     private array $generators = [];
-
-    public function add(SchemaGeneratorInterface... $generators): self
-    {
-        foreach ($generators as $generator) {
-            if ($generator instanceof ContainerAwareInterface) {
-                $generator->setContainer($this);
-            }
-        }
-
-        $this->generators = $generators;
-
-        return $this;
-    }
 
     public function getSchemaGenerator(Schema $schema): ?SchemaGeneratorInterface
     {
@@ -49,6 +44,34 @@ class SchemaGeneratorContainer
         return null;
     }
 
+    public function getFactoryCall(
+        null|Schema|Reference $schemaOrReference,
+        OpenAPI $openAPI,
+        string $parentClassName,
+        string $propertyName,
+        string $parameter,
+    ): string {
+        /** @var Schema $schema */
+        $schema = $schemaOrReference instanceof Reference
+            ? $openAPI->resolveReference($schemaOrReference)
+            : $schemaOrReference;
+
+        $schemaGenerator = $this->getSchemaGenerator($schema);
+
+        $returnTypes = $this->getReturnTypes(
+            schemaOrReference: $schemaOrReference,
+            openAPI: $openAPI,
+            parentClassName: $parentClassName,
+            propertyName: $propertyName
+        );
+
+        return isset($schemaGenerator)
+            ? $schemaGenerator->getFactoryCall(
+                propertyClassName: '\\' . $returnTypes[0],
+                parameter: $parameter,
+            )
+            : $parameter;
+    }
     /** @return array<int, string|FullyQualifiedClassName> */
     public function getReturnTypes(
         null|Schema|Reference $schemaOrReference,
@@ -76,7 +99,7 @@ class SchemaGeneratorContainer
             $typeHints[] = match ($schemaType) {
                 SchemaType::OBJECT => new FullyQualifiedClassName($this->config->namespace . '\Schema\\' . $className),
                 SchemaType::ARRAY => 'array',
-                SchemaType::NUMBER => 'float',
+                SchemaType::NUMBER => 'int|float',
                 SchemaType::INTEGER => 'int',
                 SchemaType::STRING => 'string',
                 SchemaType::BOOLEAN => 'bool',
@@ -112,7 +135,7 @@ class SchemaGeneratorContainer
             $typeHints[] = match ($schemaType) {
                 SchemaType::OBJECT => stdClass::class,
                 SchemaType::ARRAY => 'array',
-                SchemaType::NUMBER => 'float',
+                SchemaType::NUMBER => 'int|float',
                 SchemaType::INTEGER => 'int',
                 SchemaType::STRING => 'string',
                 SchemaType::BOOLEAN => 'bool',

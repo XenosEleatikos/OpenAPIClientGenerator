@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Xenos\OpenApiClientGeneratorTest\Generator\ResponseGenerator;
 
 use Nette\PhpGenerator\ClassType;
+use Nette\PhpGenerator\Parameter;
 use Nette\PhpGenerator\PsrPrinter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -55,34 +56,33 @@ class ResponseGeneratorTest extends TestCase
         $this->responseGenerator = new ResponseGenerator(
             config: $config,
             printer: $printer,
-            schemaGeneratorContainer: (new SchemaGeneratorContainer(config: $config, schemaClassNameGenerator: $schemaClassNameGenerator))
-                ->add(
-                    new EnumGenerator(
-                        config: $config,
-                        printer: $printer
-                    ),
-                    new EnumClassGenerator(
-                        config: $config,
-                        printer: $printer
-                    ),
-                    new ClassGenerator(
-                        config: $config,
-                        printer: $printer,
-                    ),
+            schemaGeneratorContainer: new SchemaGeneratorContainer(
+                config: $config,
+                schemaClassNameGenerator: $schemaClassNameGenerator,
+                classGenerator: new ClassGenerator(
+                    config: $config,
+                    printer: $printer,
                 ),
+                enumGenerator: new EnumGenerator(
+                    config: $config,
+                    printer: $printer,
+                ),
+                enumClassGenerator: new EnumClassGenerator($config, $printer),
+            )
         );
     }
 
     /**
-     * @param array<string, string> $expectedParameters
+     * @param array<string, string|class-string<object>> $expectedParameters
      * @param array<string, string> $expectedFactoryParameters
      * @param array{statusCode: string, data: mixed} $testData
      */
-    #[DataProvider('provideDataForTestGenerateConstructor')]
-    public function testGenerateConstructor(
+    #[DataProvider('provideDataForTestGenerate')]
+    public function testGenerate(
         Response $response,
         OpenAPI $openApi,
         array $expectedParameters,
+        mixed $expectedContent,
         array $expectedFactoryParameters,
         array $testData
     ): void {
@@ -97,7 +97,7 @@ class ResponseGeneratorTest extends TestCase
 
         self::assertFileExists(
             filename: $filePath,
-            message: 'Expected files have not been generated.'
+            message: 'Expected file was not generated.'
         );
 
         include $filePath;
@@ -188,6 +188,35 @@ class ResponseGeneratorTest extends TestCase
         }
 
         $result = $responseClassName::make(...$testData); // @phpstan-ignore-line The response class is generated during the test
+
+        self::assertInstanceOf(
+            expected: $responseClassName,
+            actual: $result,
+            message: 'The factory class should return an instance of the response class itself.'
+        );
+
+        if (array_key_exists(key: 'content', array: $expectedParameters)) {
+            if (str_starts_with(haystack: $expectedParameters['content'], needle: 'Xenos')) {
+                /** @var class-string<object> $expectedContentModel */
+                $expectedContentModel = $expectedParameters['content'];
+                self::assertInstanceOf(
+                    expected: $expectedContentModel,
+                    actual: $result->content, // @phpstan-ignore-line Content model is generated during the test
+                    message: 'The content of the response was expected to be an instance of ' . $expectedContentModel,
+                );
+                self::assertSame(
+                    expected: $expectedContent,
+                    actual: $result->content->data, // @phpstan-ignore-line Content model is generated during the test
+                    message: 'The response did not instantiate the content schema with the expected data.'
+                );
+            } else {
+                self::assertSame(
+                    expected: $expectedContent,
+                    actual: $result->content, // @phpstan-ignore-line Content model is generated during the test
+                    message: 'The content of the response is not as expected.'
+                );
+            }
+        }
     }
 
     private function getClassName(string $fullyQualifiedName): string
@@ -202,16 +231,25 @@ class ResponseGeneratorTest extends TestCase
     private static function createSchemaClass(string $className): ClassType
     {
         $apiClass = new ClassType($className);
-        $factory = $apiClass->addMethod('make')
+        $apiClass->addMethod('make')
+            ->setParameters([(new Parameter('data'))->setType('mixed')])
             ->setStatic()
-            ->setBody('return new self();');
+            ->setBody('return new self($data);');
+
+        $apiClass
+            ->addMethod('__construct')
+            ->addPromotedParameter('data')
+            ->setType('mixed')
+            ->setPublic();
 
         return $apiClass;
     }
 
-    /** @return array<string, array{response: Response, openApi: OpenAPI, expectedParameters: array<string, string>, expectedFactoryParameters: array<string, string>, testData: array<string, mixed>}> */
-    public static function provideDataForTestGenerateConstructor(): array
+    /** @return array<string, array{response: Response, openApi: OpenAPI, expectedParameters: array<string, string|class-string<object>>, expectedFactoryParameters: array<string, string>, testData: array<string, mixed>}> */
+    public static function provideDataForTestGenerate(): array
     {
+        $stdClass = new stdClass();
+
         return [
             'Response without content' => [
                 'response' => new Response(description: 'successful operation'),
@@ -225,6 +263,7 @@ class ResponseGeneratorTest extends TestCase
                 'expectedFactoryParameters' => [
                     'statusCode' => 'string',
                 ],
+                'expectedContent' => null,
                 'testData' => [
                     'statusCode' => '200'
                 ],
@@ -248,22 +287,23 @@ class ResponseGeneratorTest extends TestCase
                     'statusCode' => 'string',
                     'content' => 'Xenos\OpenApiClientGeneratorFixture\Schema\ResponseJsonSchema'
                 ],
+                'expectedContent' => $stdClass,
                 'expectedFactoryParameters' => [
                     'statusCode' => 'string',
                     'data' => stdClass::class,
                 ],
                 'testData' => [
                     'statusCode' => '200',
-                    'data' => new stdClass(),
+                    'data' => $stdClass,
                 ],
             ],
-            'Response with anonymous string as content' => [
+            'Response with anonymous array as content' => [
                 'response' => new Response(
                     description: 'successful operation',
                     content: new MediaTypes([
                         'application/json' => new MediaType(
                             schema: new Schema(
-                                new SchemaTypes([SchemaType::STRING]),
+                                new SchemaTypes([SchemaType::ARRAY]),
                             ),
                         )
                     ])
@@ -274,15 +314,74 @@ class ResponseGeneratorTest extends TestCase
                 ),
                 'expectedParameters' => [
                     'statusCode' => 'string',
-                    'content' => 'string'
+                    'content' => 'array'
                 ],
+                'expectedContent' => ['test', 'data'],
                 'expectedFactoryParameters' => [
                     'statusCode' => 'string',
-                    'data' => 'string',
+                    'data' => 'array',
                 ],
                 'testData' => [
                     'statusCode' => '200',
-                    'data' => 'some content',
+                    'data' => ['test', 'data'],
+                ],
+            ],
+            'Response with anonymous number as content (integer given)' => [
+                'response' => new Response(
+                    description: 'successful operation',
+                    content: new MediaTypes([
+                        'application/json' => new MediaType(
+                            schema: new Schema(
+                                new SchemaTypes([SchemaType::NUMBER]),
+                            ),
+                        )
+                    ])
+                ),
+                'openApi' => new OpenAPI(
+                    openapi: Version::make('3.1.0'),
+                    info: new Info('Pet Shop API', '1.0.0'),
+                ),
+                'expectedParameters' => [
+                    'statusCode' => 'string',
+                    'content' => 'int|float'
+                ],
+                'expectedContent' => 123,
+                'expectedFactoryParameters' => [
+                    'statusCode' => 'string',
+                    'data' => 'int|float',
+                ],
+                'testData' => [
+                    'statusCode' => '200',
+                    'data' => 123,
+                ],
+            ],
+            'Response with anonymous number as content (float given)' => [
+                'response' => new Response(
+                    description: 'successful operation',
+                    content: new MediaTypes([
+                        'application/json' => new MediaType(
+                            schema: new Schema(
+                                new SchemaTypes([SchemaType::NUMBER]),
+                            ),
+                        )
+                    ])
+                ),
+                'openApi' => new OpenAPI(
+                    openapi: Version::make('3.1.0'),
+                    info: new Info('Pet Shop API', '1.0.0'),
+                ),
+                'expectedParameters' => [
+                    'statusCode' => 'string',
+                    'content' => 'int|float'
+                ],
+                'expectedContent' => 123.45,
+                'expectedFactoryParameters' => [
+                    'statusCode' => 'string',
+                    'data' => 'int|float',
+                ],
+                'testData' => [
+                    'statusCode' => '200',
+                    'data' => 123.45,
                 ],
             ],
             'Response with anonymous integer as content' => [
@@ -304,6 +403,7 @@ class ResponseGeneratorTest extends TestCase
                     'statusCode' => 'string',
                     'content' => 'int'
                 ],
+                'expectedContent' => 123,
                 'expectedFactoryParameters' => [
                     'statusCode' => 'string',
                     'data' => 'int',
@@ -311,6 +411,122 @@ class ResponseGeneratorTest extends TestCase
                 'testData' => [
                     'statusCode' => '200',
                     'data' => 123,
+                ],
+            ],
+            'Response with anonymous string as content' => [
+                'response' => new Response(
+                    description: 'successful operation',
+                    content: new MediaTypes([
+                        'application/json' => new MediaType(
+                            schema: new Schema(
+                                new SchemaTypes([SchemaType::STRING]),
+                            ),
+                        )
+                    ])
+                ),
+                'openApi' => new OpenAPI(
+                    openapi: Version::make('3.1.0'),
+                    info: new Info('Pet Shop API', '1.0.0'),
+                ),
+                'expectedParameters' => [
+                    'statusCode' => 'string',
+                    'content' => 'string'
+                ],
+                'expectedContent' => 'some content',
+                'expectedFactoryParameters' => [
+                    'statusCode' => 'string',
+                    'data' => 'string',
+                ],
+                'testData' => [
+                    'statusCode' => '200',
+                    'data' => 'some content',
+                ],
+            ],
+            'Response with anonymous boolean as content (true given)' => [
+                'response' => new Response(
+                    description: 'successful operation',
+                    content: new MediaTypes([
+                        'application/json' => new MediaType(
+                            schema: new Schema(
+                                new SchemaTypes([SchemaType::BOOLEAN]),
+                            ),
+                        )
+                    ])
+                ),
+                'openApi' => new OpenAPI(
+                    openapi: Version::make('3.1.0'),
+                    info: new Info('Pet Shop API', '1.0.0'),
+                ),
+                'expectedParameters' => [
+                    'statusCode' => 'string',
+                    'content' => 'bool'
+                ],
+                'expectedContent' => true,
+                'expectedFactoryParameters' => [
+                    'statusCode' => 'string',
+                    'data' => 'bool',
+                ],
+                'testData' => [
+                    'statusCode' => '200',
+                    'data' => true,
+                ],
+            ],
+            'Response with anonymous boolean as content (false given)' => [
+                'response' => new Response(
+                    description: 'successful operation',
+                    content: new MediaTypes([
+                        'application/json' => new MediaType(
+                            schema: new Schema(
+                                new SchemaTypes([SchemaType::BOOLEAN]),
+                            ),
+                        )
+                    ])
+                ),
+                'openApi' => new OpenAPI(
+                    openapi: Version::make('3.1.0'),
+                    info: new Info('Pet Shop API', '1.0.0'),
+                ),
+                'expectedParameters' => [
+                    'statusCode' => 'string',
+                    'content' => 'bool'
+                ],
+                'expectedContent' => false,
+                'expectedFactoryParameters' => [
+                    'statusCode' => 'string',
+                    'data' => 'bool',
+                ],
+                'testData' => [
+                    'statusCode' => '200',
+                    'data' => false,
+                ],
+            ],
+            'Response with anonymous null as content' => [
+                'response' => new Response(
+                    description: 'successful operation',
+                    content: new MediaTypes([
+                        'application/json' => new MediaType(
+                            schema: new Schema(
+                                new SchemaTypes([SchemaType::NULL]),
+                            ),
+                        )
+                    ])
+                ),
+                'openApi' => new OpenAPI(
+                    openapi: Version::make('3.1.0'),
+                    info: new Info('Pet Shop API', '1.0.0'),
+                ),
+                'expectedParameters' => [
+                    'statusCode' => 'string',
+                    'content' => 'null'
+                ],
+                'expectedContent' => null,
+                'expectedFactoryParameters' => [
+                    'statusCode' => 'string',
+                    'data' => 'null',
+                ],
+                'testData' => [
+                    'statusCode' => '200',
+                    'data' => null,
                 ],
             ],
             'Response with reference to object schema' => [
@@ -337,13 +553,14 @@ class ResponseGeneratorTest extends TestCase
                     'statusCode' => 'string',
                     'content' => 'Xenos\OpenApiClientGeneratorFixture\Schema\Pet',
                 ],
+                'expectedContent' => $stdClass,
                 'expectedFactoryParameters' => [
                     'statusCode' => 'string',
                     'data' => stdClass::class,
                 ],
                 'testData' => [
                     'statusCode' => '200',
-                    'data' => new stdClass(),
+                    'data' => $stdClass,
                 ],
             ],
         ];

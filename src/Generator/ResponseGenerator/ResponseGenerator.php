@@ -93,13 +93,6 @@ readonly class ResponseGenerator
             openAPI: $openAPI,
         );
 
-        $returnTypes = $this->schemaGeneratorContainer->getReturnTypes(
-            schemaOrReference: $jsonMediaTypeSchemaOrReference,
-            openAPI: $openAPI,
-            parentClassName: $fqcn->getClassName(),
-            propertyName: 'jsonSchema'
-        );
-
         if (isset($jsonMediaType)) {
             $factory->addParameter('data')
                 ->setType(implode(separator: '|', array: $rawTypes));
@@ -114,25 +107,16 @@ readonly class ResponseGenerator
         $factory
             ->addBody('return new self(' . PHP_EOL . '    $statusCode, ');
 
-        /** @var ?Schema $jsonMediaTypeSchema */
-        $jsonMediaTypeSchema = $jsonMediaTypeSchemaOrReference instanceof Reference
-            ? $openAPI->resolveReference($jsonMediaTypeSchemaOrReference)
-            : $jsonMediaTypeSchemaOrReference;
-
-        $schemaGenerator = isset($jsonMediaTypeSchema)
-            ? $this->schemaGeneratorContainer->getSchemaGenerator($jsonMediaTypeSchema)
-            : null;
-
-        if (isset($schemaGenerator)) {
-            $factory->addBody(
-                code: '    \\' . $schemaGenerator->getFactoryCall(
-                    propertyClassName: (string)$returnTypes[0], /** @todo Implement switch-case with type check */
-                    parameter: '$data'
-                )
-            );
-        } else {
-            $factory->addBody('    $data');
-        }
+        $factoryCall = $this->schemaGeneratorContainer->getFactoryCall(
+            schemaOrReference: $jsonMediaTypeSchemaOrReference,
+            openAPI: $openAPI,
+            parentClassName: $fqcn->getClassName(),
+            propertyName: 'jsonSchema',
+            parameter: '$data',
+        );
+        $factory->addBody(
+            code: '    ' . $factoryCall
+        );
 
         $factory->addBody(');');
     }

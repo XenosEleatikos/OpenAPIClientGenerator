@@ -4,99 +4,144 @@ declare(strict_types=1);
 
 namespace Xenos\OpenApiClientGeneratorTest\Generator\SchemaGenerator;
 
+use Nette\PhpGenerator\PsrPrinter;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Xenos\OpenApi\Model\Schema;
-use Xenos\OpenApiClientGenerator\Generator\Config\Config;
-use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\ContainerAwareInterface;
+use Xenos\OpenApi\Model\SchemaType;
+use Xenos\OpenApi\Model\SchemaTypes;
+use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\ClassGenerator;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumClassGenerator;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaClassNameGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaGeneratorContainer;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaGeneratorInterface;
+use Xenos\OpenApiClientGeneratorTestHelper\TmpDir;
+
+use function get_class;
 
 class SchemaGeneratorContainerTest extends TestCase
 {
-    /**
-     * @param ?int $expected           Key of the injected {@see SchemaGeneratorInterface} which will be created due to 2nd parameter
-     *                                 null, if null is expected as return value
-     * @param bool[] $responsibilities For each value a mock instance of {@see SchemaGeneratorInterface} will be injected
-     *                                 into the container and the value itself will be returned by {@see SchemaGeneratorInterface::isResponsible()}
-     */
-    #[DataProvider('provideDataForTestGetSchemaGenerator')]
-    public function testGetSchemaGenerator(
-        ?int $expected,
-        array $responsibilities
-    ): void {
-        $schema = new Schema();
+    private static ClassGenerator $classGenerator;
+    private static EnumGenerator $enumGenerator;
+    private static EnumClassGenerator $enumClassGenerator;
+    private static SchemaGeneratorContainer $schemaGeneratorContainer;
 
-        foreach ($responsibilities as $responsibility) {
-            /** @var MockObject&SchemaGeneratorInterface $generator */
-            $generator = $this->createMock(SchemaGeneratorInterface::class);
-            $generator->method('isResponsible')->with($schema)->willReturn($responsibility);
-            $generators[] = $generator;
-        }
+    public static function setUpBeforeClass(): void
+    {
+        $printer = new Printer(new PsrPrinter());
+        $config = (new TmpDir())->makeConfig();
 
-        $schemaGeneratorContainer = new SchemaGeneratorContainer(
-            config: $this->createStub(Config::class),
-            schemaClassNameGenerator: $this->createStub(SchemaClassNameGenerator::class)
+        self::$classGenerator = new ClassGenerator(
+            config: $config,
+            printer: $printer,
         );
+        self::$enumGenerator = new EnumGenerator(
+            config: $config,
+            printer: $printer,
+        );
+        self::$enumClassGenerator = new EnumClassGenerator($config, $printer);
 
-        $schemaGeneratorContainer->add(...$generators ?? []);
-
-        $schemaGenerator = $schemaGeneratorContainer->getSchemaGenerator($schema);
-
-        self::assertSame(
-            isset($expected)
-                ? $generators[$expected] ?? null
-                : null,
-            $schemaGenerator
+        self::$schemaGeneratorContainer = new SchemaGeneratorContainer(
+            config: $config,
+            schemaClassNameGenerator: new SchemaClassNameGenerator(),
+            classGenerator: self::$classGenerator,
+            enumGenerator: self::$enumGenerator,
+            enumClassGenerator: self::$enumClassGenerator,
         );
     }
 
-    /** @return array<string, array<string, array<int, bool>|int|null>> */
+    #[DataProvider('provideDataForTestGetSchemaGenerator')]
+    public function testGetSchemaGenerator(
+        Schema $schema,
+        ?string $expectedSchemaGenerator,
+    ): void {
+        $result = self::$schemaGeneratorContainer->getSchemaGenerator($schema);
+
+        /** @var ?SchemaGeneratorInterface $expectedSchemaGenerator */
+        $expectedSchemaGenerator = isset($expectedSchemaGenerator)
+            ? self::${$expectedSchemaGenerator}
+            : null;
+        if (isset($expectedSchemaGenerator)) {
+            self::assertInstanceOf(
+                expected: get_class($expectedSchemaGenerator),
+                actual: $result,
+                message: 'The wrong responsibility was determined.'
+            );
+        }
+
+        self::assertSame(
+            expected: isset($expectedSchemaGenerator) ? $expectedSchemaGenerator : null,
+            actual: $result,
+            message: 'The returned instance of the schema generator was not the instance injected into the constructor.'
+        );
+    }
+
+    /** @return array<string, array{schema: Schema, expectedSchemaGenerator: ?string}> */
     public static function provideDataForTestGetSchemaGenerator(): array
     {
         return [
-            'No generator' => [
-                'expected' => null,
-                'responsibilities' => [],
+            'Object schema given' => [
+                'schema' => new Schema(
+                    type: new SchemaTypes([SchemaType::OBJECT])
+                ),
+                'expectedSchemaGenerator' => 'classGenerator',
             ],
-            'One responsible generator' => [
-                'expected' => 0,
-                'responsibilities' => [true],
+            'Array schema given' => [
+                'schema' => new Schema(
+                    type: new SchemaTypes([SchemaType::ARRAY])
+                ),
+                'expectedSchemaGenerator' => null,
             ],
-            'One not responsible generator' => [
-                'expected' => null,
-                'responsibilities' => [false],
+            'Number schema given' => [
+                'schema' => new Schema(
+                    type: new SchemaTypes([SchemaType::NUMBER])
+                ),
+                'expectedSchemaGenerator' => null,
             ],
-            'Two generators, first responsible' => [
-                'expected' => 0,
-                'responsibilities' => [true, false],
+            'Integer schema given' => [
+                'schema' => new Schema(
+                    type: new SchemaTypes([SchemaType::INTEGER])
+                ),
+                'expectedSchemaGenerator' => null,
             ],
-            'Two generators, second responsible' => [
-                'expected' => 1,
-                'responsibilities' => [false, true],
+            'String schema given' => [
+                'schema' => new Schema(
+                    type: new SchemaTypes([SchemaType::STRING])
+                ),
+                'expectedSchemaGenerator' => null,
             ],
-            'Two generators, both responsible' => [
-                'expected' => 0,
-                'responsibilities' => [true, true],
+            'Boolean schema given' => [
+                'schema' => new Schema(
+                    type: new SchemaTypes([SchemaType::BOOLEAN])
+                ),
+                'expectedSchemaGenerator' => null,
+            ],
+            'Null schema given' => [
+                'schema' => new Schema(
+                    type: new SchemaTypes([SchemaType::NULL])
+                ),
+                'expectedSchemaGenerator' => null,
+            ],
+            'Enum of strings given' => [
+                'schema' => new Schema(
+                    enum: ['value1', 'value2'],
+                ),
+                'expectedSchemaGenerator' => 'enumGenerator',
+            ],
+            'Enum of integers given' => [
+                'schema' => new Schema(
+                    enum: [123, 234],
+                ),
+                'expectedSchemaGenerator' => 'enumGenerator',
+            ],
+            'Enum of mixed types given' => [
+                'schema' => new Schema(
+                    enum: ['value1', 123],
+                ),
+                'expectedSchemaGenerator' => 'enumClassGenerator',
             ],
         ];
-    }
-
-    public function testGetSchemaGeneratorSetsSelfToContainerAwareInstances(): void
-    {
-        $schemaGeneratorContainer = new SchemaGeneratorContainer(
-            config: $this->createStub(Config::class),
-            schemaClassNameGenerator: $this->createStub(SchemaClassNameGenerator::class),
-        );
-
-        /** @var MockObject&SchemaGeneratorInterface&ContainerAwareInterface $generator */
-        $generator = $this->createMockForIntersectionOfInterfaces([SchemaGeneratorInterface::class, ContainerAwareInterface::class]);
-        $generator->expects(self::once())
-            ->method('setContainer')
-            ->with($schemaGeneratorContainer);
-
-        $schemaGeneratorContainer->add($generator);
     }
 }

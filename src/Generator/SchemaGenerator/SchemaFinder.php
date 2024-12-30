@@ -11,12 +11,22 @@ use Xenos\OpenApiClientGenerator\Model\FullyQualifiedClassName;
 
 use function array_merge;
 
-class SchemaFinder
+readonly class SchemaFinder
 {
     public function __construct(
         private SchemaClassNameGenerator $schemaClassNameGenerator,
         private ResponseFinder $responseFinder,
     ) {
+    }
+
+    public function findAllSchemas(OpenAPI $openAPI): Schemas
+    {
+        return new Schemas(
+            array_merge(
+                (array)$openAPI->components->schemas,
+                $this->findAnonymousSchemas($openAPI)
+            )
+        );
     }
 
     /** @return array<string, Schema> */
@@ -38,14 +48,13 @@ class SchemaFinder
                 /** @var MediaType $jsonMediaType */
                 $jsonMediaType = $response->content['application/json'];
                 if ($jsonMediaType->schema instanceof Schema) {
-                    $anonymousSchemas[
-                    $this->schemaClassNameGenerator->createSchemaClassName(
-                        schemaOrReference: $jsonMediaType->schema,
-                        openAPI: $openAPI,
-                        parentClassName: (new FullyQualifiedClassName($fqcn))->getClassName(),
-                        propertyName: 'jsonSchema'
-                    )[0]
-                    ] = $jsonMediaType->schema;
+                    $anonymousSchemas = array_merge(
+                        $anonymousSchemas ?? [],
+                        $this->findAnonymousSchemasRecursive(
+                            parentClassName: (new FullyQualifiedClassName($fqcn))->getClassName() . 'JsonSchema',
+                            schema: $jsonMediaType->schema
+                        )
+                    );
                 }
             }
         }
@@ -56,6 +65,7 @@ class SchemaFinder
     /** @return Schema[] */
     private function findAnonymousSchemasRecursive(string $parentClassName, Schema $schema): array
     {
+        $anonymousSchemas[$parentClassName] = $schema;
         foreach ($schema->properties as $propertyName => $schemaOrReference) {
             if ($schemaOrReference instanceof Schema) {
                 $schemaClassName = $this->schemaClassNameGenerator->createSchemaClassNameFromParentClassNameAndProperty($parentClassName, $propertyName);
@@ -67,16 +77,6 @@ class SchemaFinder
             }
         }
 
-        return $anonymousSchemas ?? [];
-    }
-
-    public function findAllSchemas(OpenAPI $openAPI): Schemas
-    {
-        return new Schemas(
-            array_merge(
-                (array)$openAPI->components->schemas,
-                $this->findAnonymousSchemas($openAPI)
-            )
-        );
+        return $anonymousSchemas;
     }
 }

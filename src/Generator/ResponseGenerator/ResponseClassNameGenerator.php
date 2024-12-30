@@ -16,6 +16,7 @@ use Xenos\OpenApiClientGenerator\Model\FullyQualifiedClassName;
 use function array_pop;
 use function explode;
 use function is_null;
+use function is_numeric;
 use function preg_match;
 use function preg_replace_callback;
 use function strtoupper;
@@ -67,6 +68,10 @@ readonly class ResponseClassNameGenerator
 
         if (is_null($className)) {
             throw new Error();
+        }
+
+        if (is_numeric($className)) {
+            $className = 'Response' . $className;
         }
 
         return new FullyQualifiedClassName($this->config->namespace . '\Response\\' . ucfirst($className));

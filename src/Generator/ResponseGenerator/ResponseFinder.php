@@ -19,7 +19,7 @@ readonly class ResponseFinder
     public function findResponses(OpenAPI $openAPI): array
     {
         foreach ($openAPI->components->responses as $name => $response) {
-            $responses[(string)$this->responseClassNameGenerator->fromComponentsKey($name)] = $response;
+            $responses[(string)$this->responseClassNameGenerator->fromComponentsKey((string)$name)] = $response;
         }
 
         foreach ($this->findAnonymousResponses($openAPI) as $fqcn => $response) {

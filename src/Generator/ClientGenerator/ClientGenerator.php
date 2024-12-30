@@ -9,12 +9,9 @@ use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
 use Psr\Http\Client\ClientInterface;
 use Xenos\OpenApi\Model\OpenAPI;
-use Xenos\OpenApi\Model\Tag;
 use Xenos\OpenApiClientGenerator\Generator\ApiGenerator\ApiGenerator;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
-
-use function array_merge;
 
 readonly class ClientGenerator
 {

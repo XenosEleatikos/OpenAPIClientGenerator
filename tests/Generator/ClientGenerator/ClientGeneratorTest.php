@@ -31,9 +31,7 @@ use Xenos\OpenApiClientGenerator\Generator\ClientGenerator\ClassCommentGenerator
 use Xenos\OpenApiClientGenerator\Generator\ClientGenerator\ClientGenerator;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 use Xenos\OpenApiClientGenerator\Generator\ResponseGenerator\ResponseClassNameGenerator;
-use Xenos\OpenApiClientGeneratorFixture\ClientGeneratorTest\Client1\Client;
-use Xenos\OpenApiClientGeneratorFixture\ClientGeneratorTest\Client1\Config\Config;
-use Xenos\OpenApiClientGeneratorFixture\ClientGeneratorTest\Client1\Config\Server;
+use Xenos\OpenApiClientGeneratorFixture\Client;
 use Xenos\OpenApiClientGeneratorTestHelper\Reflection;
 use Xenos\OpenApiClientGeneratorTestHelper\TmpDir;
 
@@ -143,7 +141,7 @@ class ClientGeneratorTest extends TestCase
         $httpClient = $this->createStub(ClientInterface::class);
         $config = new ($this->tmpDir->getFullyQualifiedClassName('Config\Config'))();
 
-        /** @var \Xenos\OpenApiClientGeneratorFixture\Client $client */
+        /** @var Client $client */
         $client = new $reflectionClass->name($httpClient, $config); // @phpstan-ignore-line This class is generated temporarily during the test
 
         foreach ($expectedApiFactories as $expectedApiFactory => $expectedReturnType) {
@@ -477,7 +475,7 @@ class ClientGeneratorTest extends TestCase
     /** @param class-string $expectedReturnType */
     private static function assertApiFactoryWorks(
         string $expectedApiFactory,
-        \Xenos\OpenApiClientGeneratorFixture\Client $client, // @phpstan-ignore-line This class is generated temporarily during the test
+        Client $client, // @phpstan-ignore-line This class is generated temporarily during the test
         string $expectedReturnType,
         Stub&ClientInterface $httpClient,
         mixed $config

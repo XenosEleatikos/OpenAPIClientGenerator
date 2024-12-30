@@ -15,7 +15,6 @@ use Xenos\OpenApi\Model\OpenAPI;
 use Xenos\OpenApi\Model\Schema;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumGenerator;
-use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaClassNameGenerator;
 use Xenos\OpenApiClientGeneratorTestHelper\TmpDir;
 
 use function array_keys;

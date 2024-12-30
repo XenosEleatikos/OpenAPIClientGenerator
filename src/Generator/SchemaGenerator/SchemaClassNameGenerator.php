@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Xenos\OpenApiClientGenerator\Generator\SchemaGenerator;
 
+use Xenos\OpenApi\Model\OpenAPI;
 use Xenos\OpenApi\Model\Reference;
 use Xenos\OpenApi\Model\Schema;
-use Xenos\OpenApi\Model\OpenAPI;
 
 use function array_pop;
 use function explode;

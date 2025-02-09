@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Generator\SchemaGenerator;
 
+use Nette\PhpGenerator\ClassType;
+use Nette\PhpGenerator\EnumCase;
+use Nette\PhpGenerator\EnumType;
 use Nette\PhpGenerator\PsrPrinter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -18,12 +21,15 @@ use Xenos\OpenApi\Model\SchemaTypes;
 use Xenos\OpenApi\Model\Version;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\ClassGenerator;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\CollectionGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumClassGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaClassNameGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaGeneratorContainer;
 use Xenos\OpenApiClientGeneratorTestHelper\Reflection;
 use Xenos\OpenApiClientGeneratorTestHelper\TmpDir;
+
+use function array_key_exists;
 
 #[RunTestsInSeparateProcesses]
 class ClassGeneratorTest extends TestCase
@@ -36,20 +42,24 @@ class ClassGeneratorTest extends TestCase
         $printer = new Printer(new PsrPrinter());
         $this->tmpDir = new TmpDir();
         $config = $this->tmpDir->makeConfig();
+        $schemaClassNameGenerator = new SchemaClassNameGenerator();
+
         $this->classGenerator = new ClassGenerator(
+            schemaClassNameGenerator: $schemaClassNameGenerator,
             config: $config,
             printer: new Printer(new PsrPrinter()),
         );
 
         new SchemaGeneratorContainer(
             config: $config,
-            schemaClassNameGenerator: new SchemaClassNameGenerator(),
+            schemaClassNameGenerator: $schemaClassNameGenerator,
             classGenerator: $this->classGenerator,
             enumGenerator: new EnumGenerator(
                 config: $config,
                 printer: $printer,
             ),
             enumClassGenerator: new EnumClassGenerator($config, $printer),
+            collectionGenerator: new CollectionGenerator($config, $printer),
         );
     }
 
@@ -164,16 +174,33 @@ class ClassGeneratorTest extends TestCase
 
     /**
      * @param array<string, string> $expectedParameters
-     * @param array<string, mixed> $expectedProperties
+     * @param array<string, array{same: mixed, instanceOf: class-string<object>, valueIsSame: mixed, valueEquals: mixed}> $expectedProperties
+     * @param array<int, ClassType|EnumType> $requiredSchemas
      */
-    #[DataProvider('provideDataForTestGenerateFile')]
-    public function testGenerateFile(
+    #[DataProvider('provideSchemasWithScalarProperties')]
+    #[DataProvider('provideSchemasWithArrayProperties')]
+    #[DataProvider('provideSchemasWithObjectProperties')]
+    #[DataProvider('provideSchemasWithEnumProperties')]
+    #[DataProvider('provideSchemasWithAdditionalProperties')]
+    public function testGenerateSchema(
         array $expectedParameters,
         array $expectedProperties,
         stdClass $testData,
         Schema $schema,
-        OpenAPI $openAPI,
+        array $requiredSchemas = [],
     ): void {
+        $openAPI = new OpenAPI(
+            openapi: Version::make('3.1.0'),
+            info: new Info('Pet Shop API', '1.0.0'),
+        );
+
+        foreach ($requiredSchemas as $requiredSchema) {
+            $this->tmpDir->addClass(
+                classType: $requiredSchema,
+                namespace: 'Schema'
+            );
+        }
+
         $fqcn = $this->tmpDir->getFullyQualifiedClassName('Schema\Schema');
 
         $this->classGenerator->generateSchema(
@@ -267,47 +294,49 @@ class ClassGeneratorTest extends TestCase
         );
 
         foreach ($expectedProperties as $propertyName => $expectedValue) {
-            self::assertSame(
-                expected: $expectedValue,
-                actual: $result->$propertyName,
-                message: 'The property "' . $propertyName . '" is not as expected.'
-            );
+            if (array_key_exists('same', $expectedValue)) {
+                self::assertSame(
+                    expected: $expectedValue['same'],
+                    actual: $result->$propertyName,
+                    message: 'The property "' . $propertyName . '" is not as expected.'
+                );
+            }
+            if (array_key_exists('instanceOf', $expectedValue)) {
+                self::assertInstanceOf(
+                    expected: $expectedValue['instanceOf'],
+                    actual: $result->$propertyName,
+                    message: 'The property "' . $propertyName . '" is expected to be instance of "' . $expectedValue['instanceOf'] . '".'
+                );
+            }
+            if (array_key_exists('valueIsSame', $expectedValue)) {
+                self::assertSame(
+                    expected: $expectedValue['valueIsSame'],
+                    actual: $result->$propertyName->value, // @phpstan-ignore-line Dependent schema is generated above
+                    message: 'The factory method did not pass the expected values to the entity in property "' . $propertyName . '".'
+                );
+            }
+            if (array_key_exists('valueEquals', $expectedValue)) {
+                self::assertEquals(
+                    expected: $expectedValue['valueEquals'],
+                    actual: $result->$propertyName->value,
+                    message: 'The factory method did not pass the expected values to the entity in property "' . $propertyName . '".'
+                );
+            }
         }
     }
 
-    /** @return array<string, array{expectedParameters: array<string, string>, expectedProperties: array<string, mixed>, testData: stdClass, schema: Schema, openAPI: OpenAPI}> */
-    public static function provideDataForTestGenerateFile(): array
+    /** @return array<string, array{expectedParameters: array<string, string>, expectedProperties: array<string, array<int|string, mixed>>, testData: stdClass, schema: Schema}> */
+    public static function provideSchemasWithScalarProperties(): array
     {
-        $openApi = new OpenAPI(
-            openapi: Version::make('3.1.0'),
-            info: new Info('Pet Shop API', '1.0.0'),
-        );
-
         return [
-            'Object with array property' => [
-                'expectedParameters' => [
-                    'someProperty' => 'array',
-                ],
-                'expectedProperties' => [
-                    'someProperty' => ['test' => 'data']
-                ],
-                'testData' => (object)['someProperty' => ['test' => 'data']],
-                'schema' => new Schema(
-                    type: new SchemaTypes([SchemaType::OBJECT]),
-                    properties: new SchemasOrReferences([
-                        'someProperty' => new Schema(
-                            type: new SchemaTypes([SchemaType::ARRAY])
-                        ),
-                    ]),
-                ),
-                'openAPI' => $openApi,
-            ],
             'Object with number property (float given)' => [
                 'expectedParameters' => [
                     'someProperty' => 'int|float',
                 ],
                 'expectedProperties' => [
-                    'someProperty' => 123.45
+                    'someProperty' => [
+                        'same => 123.45'
+                    ]
                 ],
                 'testData' => (object)['someProperty' => 123.45],
                 'schema' => new Schema(
@@ -317,15 +346,17 @@ class ClassGeneratorTest extends TestCase
                             type: new SchemaTypes([SchemaType::NUMBER])
                         ),
                     ]),
+                    additionalProperties: false,
                 ),
-                'openAPI' => $openApi,
             ],
             'Object with number property (integer given)' => [
                 'expectedParameters' => [
                     'someProperty' => 'int|float',
                 ],
                 'expectedProperties' => [
-                    'someProperty' => 123
+                    'someProperty' => [
+                        'same' => 123
+                    ]
                 ],
                 'testData' => (object)['someProperty' => 123],
                 'schema' => new Schema(
@@ -335,15 +366,17 @@ class ClassGeneratorTest extends TestCase
                             type: new SchemaTypes([SchemaType::NUMBER])
                         ),
                     ]),
+                    additionalProperties: false,
                 ),
-                'openAPI' => $openApi,
             ],
             'Object with integer property' => [
                 'expectedParameters' => [
                     'someProperty' => 'int',
                 ],
                 'expectedProperties' => [
-                    'someProperty' => 123
+                    'someProperty' => [
+                        'same' => 123
+                    ]
                 ],
                 'testData' => (object)['someProperty' => 123],
                 'schema' => new Schema(
@@ -353,15 +386,17 @@ class ClassGeneratorTest extends TestCase
                             type: new SchemaTypes([SchemaType::INTEGER])
                         ),
                     ]),
+                    additionalProperties: false,
                 ),
-                'openAPI' => $openApi,
             ],
             'Object with string property' => [
                 'expectedParameters' => [
                     'someProperty' => 'string',
                 ],
                 'expectedProperties' => [
-                    'someProperty' => 'test data'
+                    'someProperty' => [
+                        'same' => 'test data'
+                    ]
                 ],
                 'testData' => (object)['someProperty' => 'test data'],
                 'schema' => new Schema(
@@ -371,15 +406,17 @@ class ClassGeneratorTest extends TestCase
                             type: new SchemaTypes([SchemaType::STRING])
                         ),
                     ]),
+                    additionalProperties: false,
                 ),
-                'openAPI' => $openApi,
             ],
             'Object with boolean property (true given)' => [
                 'expectedParameters' => [
                     'someProperty' => 'bool',
                 ],
                 'expectedProperties' => [
-                    'someProperty' => true
+                    'someProperty' => [
+                        'same' => true
+                    ]
                 ],
                 'testData' => (object)['someProperty' => true],
                 'schema' => new Schema(
@@ -389,15 +426,17 @@ class ClassGeneratorTest extends TestCase
                             type: new SchemaTypes([SchemaType::BOOLEAN])
                         ),
                     ]),
+                    additionalProperties: false,
                 ),
-                'openAPI' => $openApi,
             ],
             'Object with boolean property (false given)' => [
                 'expectedParameters' => [
                     'someProperty' => 'bool',
                 ],
                 'expectedProperties' => [
-                    'someProperty' => false
+                    'someProperty' => [
+                        'same' => false
+                    ]
                 ],
                 'testData' => (object)['someProperty' => false],
                 'schema' => new Schema(
@@ -407,15 +446,17 @@ class ClassGeneratorTest extends TestCase
                             type: new SchemaTypes([SchemaType::BOOLEAN])
                         ),
                     ]),
+                    additionalProperties: false,
                 ),
-                'openAPI' => $openApi,
             ],
             'Object with null property' => [
                 'expectedParameters' => [
                     'someProperty' => 'null',
                 ],
                 'expectedProperties' => [
-                    'someProperty' => null
+                    'someProperty' => [
+                        'same' => null
+                    ]
                 ],
                 'testData' => (object)['someProperty' => null],
                 'schema' => new Schema(
@@ -425,8 +466,178 @@ class ClassGeneratorTest extends TestCase
                             type: new SchemaTypes([SchemaType::NULL])
                         ),
                     ]),
+                    additionalProperties: false,
                 ),
-                'openAPI' => $openApi,
+            ],
+        ];
+    }
+
+    /** @return array<string, array{expectedParameters: array<string, string>, expectedProperties: array<string, array<int|string, mixed>>, testData: stdClass, schema: Schema, requiredSchemas: array<int, ClassType>}> */
+    public static function provideSchemasWithArrayProperties(): array
+    {
+        $arrayObject = new ClassType('SchemaSomeArray');
+        $arrayObject->addMethod('make')
+            ->setStatic()
+            ->addBody('return new self($data);')
+            ->addParameter('data');
+        $arrayObject->addMethod('__construct')
+            ->addPromotedParameter('value');
+
+        return [
+            'Object with array property' => [
+                'expectedParameters' => [
+                    'someArray' => 'Xenos\OpenApiClientGeneratorFixture\Schema\SchemaSomeArray',
+                ],
+                'expectedProperties' => [
+                    'someArray' => [
+                        'instanceOf' => 'Xenos\OpenApiClientGeneratorFixture\Schema\SchemaSomeArray',
+                        'valueIsSame' => ['value1', 'value2'],
+                    ],
+                ],
+                'testData' => (object)['someArray' => ['value1', 'value2']],
+                'schema' => new Schema(
+                    type: new SchemaTypes([SchemaType::OBJECT]),
+                    properties: new SchemasOrReferences([
+                        'someArray' => new Schema(
+                            type: new SchemaTypes([SchemaType::ARRAY])
+                        ),
+                    ]),
+                    additionalProperties: false,
+                ),
+                'requiredSchemas' => [$arrayObject],
+            ],
+        ];
+    }
+
+    /** @return array<string, array{expectedParameters: array<string, string>, expectedProperties: array<string, array<int|string, mixed>>, testData: stdClass, schema: Schema, requiredSchemas: array<int, ClassType>}> */
+    public static function provideSchemasWithObjectProperties(): array
+    {
+        $objectSchema = new ClassType('SchemaSomeObject');
+        $objectSchema->addMethod('make')
+            ->setStatic()
+            ->addBody('return new self($data);')
+            ->addParameter('data');
+        $objectSchema->addMethod('__construct')
+            ->addPromotedParameter('value');
+
+        return [
+            'Object with object property' => [
+                'expectedParameters' => [
+                    'someObject' => 'Xenos\OpenApiClientGeneratorFixture\Schema\SchemaSomeObject',
+                ],
+                'expectedProperties' => [
+                    'someObject' => [
+                        'instanceOf' => 'Xenos\OpenApiClientGeneratorFixture\Schema\SchemaSomeObject',
+                        'valueEquals' => (object)['value1', 'value2'],
+                    ],
+                ],
+                'testData' => (object)['someObject' => (object)['value1', 'value2']],
+                'schema' => new Schema(
+                    type: new SchemaTypes([SchemaType::OBJECT]),
+                    properties: new SchemasOrReferences([
+                        'someObject' => new Schema(
+                            type: new SchemaTypes([SchemaType::OBJECT])
+                        ),
+                    ]),
+                    additionalProperties: false,
+                ),
+                'requiredSchemas' => [$objectSchema],
+            ],
+        ];
+    }
+
+    /** @return array<string, array{expectedParameters: array<string, string>, expectedProperties: array<string, array<int|string, mixed>>, testData: stdClass, schema: Schema, requiredSchemas: array<int, EnumType>}> */
+    public static function provideSchemasWithEnumProperties(): array
+    {
+        $enum = new EnumType('SchemaSomeEnum');
+        $enumCase = (new EnumCase('VALUE1'))->setValue('value1');
+        $enum->setCases([$enumCase]);
+
+        return [
+            'Object with enum-of-strings property' => [
+                'expectedParameters' => [
+                    'someEnum' => 'Xenos\OpenApiClientGeneratorFixture\Schema\SchemaSomeEnum',
+                ],
+                'expectedProperties' => [
+                    'someEnum' => [
+                        'instanceOf' => 'Xenos\OpenApiClientGeneratorFixture\Schema\SchemaSomeEnum',
+                        'valueIsSame' => 'value1',
+                    ],
+                ],
+                'testData' => (object)['someEnum' => 'value1'],
+                'schema' => new Schema(
+                    type: new SchemaTypes([SchemaType::OBJECT]),
+                    properties: new SchemasOrReferences([
+                        'someEnum' => new Schema(
+                            type: new SchemaTypes([SchemaType::STRING]),
+                            enum: ['value1', 'value2'],
+                        ),
+                    ]),
+                    additionalProperties: false,
+                ),
+                'requiredSchemas' => [$enum],
+            ],
+        ];
+    }
+
+    /** @return array<string, array{expectedParameters: array<string, string>, expectedProperties: array<string, array<int|string, mixed>>, testData: stdClass, schema: Schema}> */
+    public static function provideSchemasWithAdditionalProperties(): array
+    {
+        $arrayObject = new ClassType('SchemaAdditionalProperties');
+        $arrayObject->addMethod('make')
+            ->setStatic()
+            ->addBody('return new self($data);')
+            ->addParameter('data');
+        $arrayObject->addMethod('__construct')
+            ->addPromotedParameter('value');
+
+        return [
+            'Object with only additional properties' => [
+                'expectedParameters' => [
+                    'additionalProperties' => 'Xenos\OpenApiClientGeneratorFixture\Schema\SchemaAdditionalProperties',
+                ],
+                'expectedProperties' => [
+                    'additionalProperties' => [
+                        'instanceOf' => 'Xenos\OpenApiClientGeneratorFixture\Schema\SchemaAdditionalProperties',
+                        'valueIsSame' => [123.45],
+                    ],
+                ],
+                'testData' => (object)[123.45],
+                'schema' => new Schema(
+                    type: new SchemaTypes([SchemaType::OBJECT]),
+                    additionalProperties: true,
+                ),
+                'requiredSchemas' => [
+                    $arrayObject
+                ]
+            ],
+            'Object with string property and additional properties' => [
+                'expectedParameters' => [
+                    'food' => 'string',
+                    'additionalProperties' => 'Xenos\OpenApiClientGeneratorFixture\Schema\SchemaAdditionalProperties',
+                ],
+                'expectedProperties' => [
+                    'food' => [
+                        'same' => 'dog food',
+                    ],
+                    'additionalProperties' => [
+                        'instanceOf' => 'Xenos\OpenApiClientGeneratorFixture\Schema\SchemaAdditionalProperties',
+                        'valueIsSame' => ['color' => 'brown'],
+                    ],
+                ],
+                'testData' => (object)['food' => 'dog food', 'color' => 'brown'],
+                'schema' => new Schema(
+                    type: new SchemaTypes([SchemaType::OBJECT]),
+                    properties: new SchemasOrReferences([
+                        'food' => new Schema(
+                            type: new SchemaTypes([SchemaType::STRING])
+                        ),
+                    ]),
+                    additionalProperties: true,
+                ),
+                'requiredSchemas' => [
+                    $arrayObject
+                ]
             ],
         ];
     }

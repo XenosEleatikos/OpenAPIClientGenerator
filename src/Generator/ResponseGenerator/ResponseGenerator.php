@@ -86,14 +86,17 @@ readonly class ResponseGenerator
         $factory->addParameter('statusCode')
             ->setType('string');
 
-        $rawTypes = $this->schemaGeneratorContainer->getRawDataTypes(
-            schemaOrReference: $jsonMediaTypeSchemaOrReference,
-            openAPI: $openAPI,
-        );
-
         if (isset($jsonMediaType)) {
             $factory->addParameter('data')
-                ->setType(implode(separator: '|', array: $rawTypes));
+                ->setType(
+                    implode(
+                        separator: '|',
+                        array: $this->schemaGeneratorContainer->getRawDataTypes(
+                            schemaOrReference: $jsonMediaTypeSchemaOrReference,
+                            openAPI: $openAPI,
+                        )
+                    )
+                );
         } else {
             /** @todo Implement other media types */
             $factory

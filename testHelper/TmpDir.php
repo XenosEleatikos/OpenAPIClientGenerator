@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Xenos\OpenApiClientGeneratorTestHelper;
 
 use Nette\PhpGenerator\ClassType;
+use Nette\PhpGenerator\EnumType;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
 use Nette\PhpGenerator\PsrPrinter;
@@ -92,7 +93,7 @@ class TmpDir
         return $this->namespace . '\\' . $relativeClassName;
     }
 
-    public function addClass(ClassType $classType, string $namespace)
+    public function addClass(ClassType|EnumType $classType, string $namespace)
     {
         $file = new PhpFile();
         $namespace = new PhpNamespace($this->namespace . '\\' . $namespace);

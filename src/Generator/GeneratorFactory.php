@@ -16,6 +16,7 @@ use Xenos\OpenApiClientGenerator\Generator\ResponseGenerator\ResponseClassNameGe
 use Xenos\OpenApiClientGenerator\Generator\ResponseGenerator\ResponseFinder;
 use Xenos\OpenApiClientGenerator\Generator\ResponseGenerator\ResponseGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\ClassGenerator;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\CollectionGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumClassGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaClassNameGenerator;
@@ -38,6 +39,7 @@ class GeneratorFactory
             config: $config,
             schemaClassNameGenerator: $schemaClassNameGenerator,
             classGenerator: new ClassGenerator(
+                schemaClassNameGenerator: $schemaClassNameGenerator,
                 config: $config,
                 printer: $printer,
             ),
@@ -46,6 +48,7 @@ class GeneratorFactory
                 printer: $printer,
             ),
             enumClassGenerator: new EnumClassGenerator($config, $printer),
+            collectionGenerator: new CollectionGenerator($config, $printer),
         );
 
         $responseFinder = new ResponseFinder($classNameGenerator);

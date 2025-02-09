@@ -22,12 +22,15 @@ class SchemaGeneratorContainer
         public ClassGenerator $classGenerator,
         public EnumGenerator $enumGenerator,
         public EnumClassGenerator $enumClassGenerator,
+        public CollectionGenerator $collectionGenerator,
     ) {
         $this->classGenerator->setContainer($this);
+        $this->collectionGenerator->setContainer($this);
 
         $this->generators[EnumGenerator::class] = $this->enumGenerator;
         $this->generators[EnumClassGenerator::class] = $this->enumClassGenerator;
         $this->generators[ClassGenerator::class] = $this->classGenerator;
+        $this->generators[CollectionGenerator::class] = $this->collectionGenerator;
     }
 
     /** @var SchemaGeneratorInterface[] */
@@ -51,6 +54,10 @@ class SchemaGeneratorContainer
         string $propertyName,
         string $parameter,
     ): string {
+        if (is_null($schemaOrReference)) {
+            return $parameter;
+        }
+
         /** @var Schema $schema */
         $schema = $schemaOrReference instanceof Reference
             ? $openAPI->resolveReference($schemaOrReference)
@@ -99,7 +106,7 @@ class SchemaGeneratorContainer
         foreach ($schema->type as $schemaType) {
             $typeHints[] = match ($schemaType) {
                 SchemaType::OBJECT => new FullyQualifiedClassName($this->config->namespace . '\Schema\\' . $className),
-                SchemaType::ARRAY => 'array',
+                SchemaType::ARRAY => new FullyQualifiedClassName($this->config->namespace . '\Schema\\' . $className),
                 SchemaType::NUMBER => 'int|float',
                 SchemaType::INTEGER => 'int',
                 SchemaType::STRING => 'string',
@@ -108,7 +115,7 @@ class SchemaGeneratorContainer
             };
         }
 
-        return $typeHints ?? [];
+        return $typeHints ?? ['mixed'];
     }
 
     /** @return string[] */
@@ -134,7 +141,7 @@ class SchemaGeneratorContainer
 
         foreach ($schema->type as $schemaType) {
             $typeHints[] = match ($schemaType) {
-                SchemaType::OBJECT => stdClass::class,
+                SchemaType::OBJECT => '\\' . stdClass::class,
                 SchemaType::ARRAY => 'array',
                 SchemaType::NUMBER => 'int|float',
                 SchemaType::INTEGER => 'int',

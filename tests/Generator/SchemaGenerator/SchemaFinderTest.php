@@ -52,7 +52,7 @@ class SchemaFinderTest extends TestCase
     /** @param string[] $expectedSchemas */
     #[DataProvider('provideDataForTestFindSchemas')]
     public function testFindSchemas(
-        array   $expectedSchemas,
+        array $expectedSchemas,
         OpenAPI $openAPI
     ): void {
         $getDescriptions = fn (Schema $schema): ?string => $schema->description;
@@ -281,7 +281,7 @@ class SchemaFinderTest extends TestCase
                             '/pet' => new PathItem(
                                 get: new Operation(
                                     tags: ['Pet'],
-                                    responses: new ResponsesOrReferences([
+                                    responses: new ResponsesOrReferences([ // @phpstan-ignore-line
                                         '200' => new Response(
                                             description: 'successful operation',
                                             content: new MediaTypes([
@@ -309,7 +309,7 @@ class SchemaFinderTest extends TestCase
                             '/pet' => new PathItem(
                                 get: new Operation(
                                     tags: ['Pet'],
-                                    responses: new ResponsesOrReferences([
+                                    responses: new ResponsesOrReferences([ // @phpstan-ignore-line
                                         '200' => new Response(
                                             description: 'successful operation',
                                             content: new MediaTypes([
@@ -340,7 +340,7 @@ class SchemaFinderTest extends TestCase
                             '/pet' => new PathItem(
                                 get: new Operation(
                                     tags: ['Pet'],
-                                    responses: new ResponsesOrReferences([
+                                    responses: new ResponsesOrReferences([ // @phpstan-ignore-line
                                         '200' => new Response(
                                             description: 'successful operation',
                                             content: new MediaTypes([

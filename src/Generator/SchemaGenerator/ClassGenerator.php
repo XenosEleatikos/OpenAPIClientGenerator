@@ -6,6 +6,7 @@ namespace Xenos\OpenApiClientGenerator\Generator\SchemaGenerator;
 
 use LogicException;
 use Nette\PhpGenerator\ClassType;
+use Nette\PhpGenerator\Literal;
 use Nette\PhpGenerator\PhpFile;
 use Nette\PhpGenerator\PhpNamespace;
 use stdClass;
@@ -15,14 +16,19 @@ use Xenos\OpenApi\Model\SchemaType;
 use Xenos\OpenApiClientGenerator\Generator\Config\Config;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 
+use function array_map;
 use function implode;
 use function ucfirst;
+use function array_keys;
+
+use const DIRECTORY_SEPARATOR;
 
 class ClassGenerator implements SchemaGeneratorInterface
 {
     private ?SchemaGeneratorContainer $schemaGeneratorContainer = null;
 
     public function __construct(
+        private readonly SchemaClassNameGenerator $schemaClassNameGenerator,
         private readonly Config $config,
         private readonly Printer $printer,
     ) {
@@ -78,6 +84,19 @@ class ClassGenerator implements SchemaGeneratorInterface
                     )
                 );
         }
+
+        if ($schema->additionalProperties !== false) {
+            $constructor
+                ->addPromotedParameter('additionalProperties')
+                ->setType(
+                    $additionalPropertiesClassName = $this->config->namespace . '\Schema\\' . $this->schemaClassNameGenerator
+                        ->createSchemaClassNameFromParentClassNameAndProperty(
+                            parentClassName: $className,
+                            propertyName: 'additionalProperties'
+                        )
+                )
+                ->setDefaultValue(new Literal('new \\' . $additionalPropertiesClassName . '()'));
+        }
     }
 
     private function addFactory(ClassType $class, Schema $schema, OpenAPI $openAPI, string $className): void
@@ -87,6 +106,7 @@ class ClassGenerator implements SchemaGeneratorInterface
             ->setReturnType('self');
         $factory->addParameter('data')
             ->setType(stdClass::class);
+
         $factory
             ->addBody('return new self(');
 
@@ -103,7 +123,43 @@ class ClassGenerator implements SchemaGeneratorInterface
                 ->addBody('    '.$propertyName.': ' . $factoryCall.',');
         }
 
+        if ($schema->additionalProperties !== false) {
+            $objectGetVars = '\get_object_vars($data)';
+
+            $additionalPropertiesArray = $schema->properties->count() === 0
+                ? $objectGetVars
+                : $this->generateArrayFilter(
+                    arrayLiteral: $objectGetVars,
+                    filterCallbackLiteral: $this->generateFilterCallback($schema),
+                    schema: $schema
+                );
+
+            $factory->addBody(
+                code: '    additionalProperties: ' . $this->getContainer()->collectionGenerator->getFactoryCall(
+                    propertyClassName: '\\' . $this->config->namespace . '\Schema\\' . $this->schemaClassNameGenerator
+                            ->createSchemaClassNameFromParentClassNameAndProperty(
+                                parentClassName: $className,
+                                propertyName: 'additionalProperties'
+                            ),
+                    parameter: $additionalPropertiesArray
+                )
+            );
+        }
+
         $factory->addBody(');');
+    }
+
+    private function generateFilterCallback(Schema $schema): string
+    {
+        return 'fn(string $key): bool => !\in_array($key, [' . PHP_EOL
+            . '            ' . implode(
+                separator: ', ',
+                array: array_map(
+                    callback: fn (string $key): string => '\'' . $key . '\'',
+                    array: array_keys($schema->properties->getArrayCopy())
+                )
+            ) . PHP_EOL
+        . '        ]),';
     }
 
     public function getFactoryCall(string $propertyClassName, string $parameter): string
@@ -120,5 +176,14 @@ class ClassGenerator implements SchemaGeneratorInterface
     {
         return $this->schemaGeneratorContainer
             ?? throw new LogicException('SchemaGeneratorContainer is not set.');
+    }
+
+    public function generateArrayFilter(string $arrayLiteral, string $filterCallbackLiteral, Schema $schema): string
+    {
+        return '\array_filter(' . PHP_EOL
+            . '        array: ' . $arrayLiteral . ',' . PHP_EOL
+            . '        callback: ' . $filterCallbackLiteral . PHP_EOL
+            . '        mode: \ARRAY_FILTER_USE_KEY' . PHP_EOL
+            . '    )';
     }
 }

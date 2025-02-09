@@ -26,6 +26,7 @@ use Xenos\OpenApi\Model\Version;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 use Xenos\OpenApiClientGenerator\Generator\ResponseGenerator\ResponseGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\ClassGenerator;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\CollectionGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumClassGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaClassNameGenerator;
@@ -60,6 +61,7 @@ class ResponseGeneratorTest extends TestCase
                 config: $config,
                 schemaClassNameGenerator: $schemaClassNameGenerator,
                 classGenerator: new ClassGenerator(
+                    schemaClassNameGenerator: $schemaClassNameGenerator,
                     config: $config,
                     printer: $printer,
                 ),
@@ -68,6 +70,7 @@ class ResponseGeneratorTest extends TestCase
                     printer: $printer,
                 ),
                 enumClassGenerator: new EnumClassGenerator($config, $printer),
+                collectionGenerator: new CollectionGenerator($config, $printer),
             )
         );
     }
@@ -314,7 +317,7 @@ class ResponseGeneratorTest extends TestCase
                 ),
                 'expectedParameters' => [
                     'statusCode' => 'string',
-                    'content' => 'array'
+                    'content' => 'Xenos\OpenApiClientGeneratorFixture\Schema\ResponseJsonSchema'
                 ],
                 'expectedContent' => ['test', 'data'],
                 'expectedFactoryParameters' => [

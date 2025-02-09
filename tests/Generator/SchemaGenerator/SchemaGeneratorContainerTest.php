@@ -12,6 +12,7 @@ use Xenos\OpenApi\Model\SchemaType;
 use Xenos\OpenApi\Model\SchemaTypes;
 use Xenos\OpenApiClientGenerator\Generator\Printer\Printer;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\ClassGenerator;
+use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\CollectionGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumClassGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\EnumGenerator;
 use Xenos\OpenApiClientGenerator\Generator\SchemaGenerator\SchemaClassNameGenerator;
@@ -26,6 +27,7 @@ class SchemaGeneratorContainerTest extends TestCase
     private static ClassGenerator $classGenerator;
     private static EnumGenerator $enumGenerator;
     private static EnumClassGenerator $enumClassGenerator;
+    private static CollectionGenerator $collectionGenerator;
     private static SchemaGeneratorContainer $schemaGeneratorContainer;
 
     public static function setUpBeforeClass(): void
@@ -33,7 +35,10 @@ class SchemaGeneratorContainerTest extends TestCase
         $printer = new Printer(new PsrPrinter());
         $config = (new TmpDir())->makeConfig();
 
+        $schemaClassNameGenerator = new SchemaClassNameGenerator();
+
         self::$classGenerator = new ClassGenerator(
+            schemaClassNameGenerator: $schemaClassNameGenerator,
             config: $config,
             printer: $printer,
         );
@@ -42,13 +47,15 @@ class SchemaGeneratorContainerTest extends TestCase
             printer: $printer,
         );
         self::$enumClassGenerator = new EnumClassGenerator($config, $printer);
+        self::$collectionGenerator = new CollectionGenerator($config, $printer);
 
         self::$schemaGeneratorContainer = new SchemaGeneratorContainer(
             config: $config,
-            schemaClassNameGenerator: new SchemaClassNameGenerator(),
+            schemaClassNameGenerator: $schemaClassNameGenerator,
             classGenerator: self::$classGenerator,
             enumGenerator: self::$enumGenerator,
             enumClassGenerator: self::$enumClassGenerator,
+            collectionGenerator: self::$collectionGenerator,
         );
     }
 
@@ -92,7 +99,7 @@ class SchemaGeneratorContainerTest extends TestCase
                 'schema' => new Schema(
                     type: new SchemaTypes([SchemaType::ARRAY])
                 ),
-                'expectedSchemaGenerator' => null,
+                'expectedSchemaGenerator' => 'collectionGenerator',
             ],
             'Number schema given' => [
                 'schema' => new Schema(
